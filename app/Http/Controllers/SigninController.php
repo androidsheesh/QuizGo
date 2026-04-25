@@ -6,7 +6,8 @@ use Illuminate\Support\Facades\Auth;
 
 class SigninController extends Controller
 {
-    public function create(){
+    public function create()
+    {
         return view('signin');
     }
 
@@ -18,7 +19,7 @@ class SigninController extends Controller
 
         if (Auth::attempt($credentials)){
             $request->session()->regenerate();
-            return redirect('/dashboard');
+            return redirect('home');
         }
 
         return back()->withErrors([

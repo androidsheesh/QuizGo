@@ -22,15 +22,8 @@ class SignupController extends Controller
             'password'  => 'required|string|min:8', // Requires at least 8 characters
         ]);
 
-        // 2. Here is where you would typically save the data to your database using Eloquent
-        // User::create([
-        //     'firstname' => $validatedData['firstname'],
-        //     'lastname' => $validatedData['lastname'],
-        //     'email' => $validatedData['email'],
-        //     'password' => bcrypt($validatedData['password']), // Always hash passwords!
-        // ]);
+        // after signing up, it will redirect directly to the dashboard page
+        return redirect('home');
 
-        // 3. Return a success response or redirect
-        return "Form submitted successfully!";
     }
 }

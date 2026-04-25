@@ -1,7 +1,6 @@
 <x-layout>
     {{--
         [ SECTION 01 ] HERO
-        Redesign: Added a glassmorphism effect to the nav and a more dynamic typography layout.
     --}}
     <section id="hero-section" class="relative overflow-hidden bg-gradient-to-br from-[#7bfeb6] via-[#4dfc94] to-[#3ae884] pt-10 pb-44 flex flex-col">
         <div class="absolute inset-0 opacity-20" style="background-image: radial-gradient(#000 1px, transparent 1px); background-size: 20px 20px;"></div>
@@ -27,7 +26,7 @@
     {{--
         [ SECTION 02 ] MOCKUP
          Also this section is hardcoded
-         It will be changed into a dyanamic cards so that it will change, flip and etc. not sure if dynamic bay tawag ana niya.
+         this section is dapat mag change2 ang cards.
          D pako sure kanusa nako ni e change
     --}}
     <section id="mockup-section" class="relative bg-white z-20 pb-24">

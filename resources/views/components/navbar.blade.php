@@ -9,6 +9,7 @@
 
     <div class="nav-links flex items-center space-x-8">
         <a href="#features" class="text-black font-bold text-sm uppercase tracking-widest hover:underline decoration-4 underline-offset-8">About</a>
+        <a href="/signin" class ="text-black font-bold text-sm uppercase tracking-widest hover:underline decoration-4 underline-offset-8">Login</a>
         <a href="/signup" class="px-6 py-3 rounded-xl bg-black text-white font-bold shadow-[4px_4px_0px_0px_rgba(255,255,255,1)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all">
             Start Learning
         </a>
