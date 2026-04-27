@@ -23,17 +23,16 @@
             <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Account</p>
         </div>
 
-        <a href="/myprofile" class="block px-4 py-2 text-sm text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 transition-colors">Your Profile</a>
+        <a href="/teacher-profile" class="block px-4 py-2 text-sm text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 transition-colors">Your Profile</a>
         <a href="#" class="block px-4 py-2 text-sm text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 transition-colors">Settings</a>
-        {{-- [ PROPER LOGOUT FORM ] --}}
-        <form method="POST" action="{{ route('logout') }}">
-            @csrf
-            <a href="{{ route('logout') }}"
-               onclick="event.preventDefault(); this.closest('form').submit();"
-               class="block px-4 py-2 text-sm text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors">
-                Logout
-            </a>
-        </form>
 
+        <div class="border-t border-gray-50 mt-1 pt-1">
+            <form method="POST" action="logout">
+                @csrf
+                <button type="submit" class="w-full text-left block px-4 py-2 text-sm text-red-600 hover:bg-red-50 font-semibold transition-colors">
+                    Logout
+                </button>
+            </form>
+        </div>
     </div>
 </div>
