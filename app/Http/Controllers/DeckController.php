@@ -45,7 +45,7 @@ class DeckController extends Controller
         }
 
         $deck->load('flashcards');
-        
+
         return view('decks.show', compact('deck'));
     }
 
