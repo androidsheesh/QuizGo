@@ -2,9 +2,16 @@
 
     <div @click="open = !open"
          class="flex items-center space-x-2 cursor-pointer group bg-white/80 backdrop-blur-md p-1.5 pr-3 rounded-full shadow-sm border border-gray-100 hover:shadow-md transition-all">
-        <div class="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center border border-emerald-200 group-hover:border-emerald-400 transition-colors">
-            <span class="text-xs">👤</span>
+        <div class="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center border border-emerald-200 group-hover:border-emerald-400 transition-colors overflow-hidden">
+            @if(Auth::check() && Auth::user()->profile_picture)
+                <img src="{{ asset('storage/' . Auth::user()->profile_picture) }}" alt="Avatar" class="w-full h-full object-cover">
+            @else
+                <span class="text-xs">👤</span>
+            @endif
         </div>
+        @if(Auth::check())
+            <span class="hidden md:block text-sm font-semibold text-slate-700">{{ Auth::user()->firstname }}</span>
+        @endif
         <span class="text-gray-400 text-xs transition-transform duration-200" :class="open ? 'rotate-180' : ''">⌄</span>
     </div>
 

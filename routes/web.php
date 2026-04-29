@@ -7,20 +7,17 @@ use App\Http\Controllers\SigninController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\DeckController;
 use App\Http\Controllers\FlashcardController;
+use App\Http\Controllers\StudyController;
 use App\Http\Controllers\MyProfileController;
 use App\Http\Controllers\WelcomeController;
 
 Route::get('/', [WelcomeController::class, 'show'])->name('welcome');
+Route::get('/home', [HomeController::class, 'show'])->name('home');//show the dashboard page
 
 Route::get('/signup', [SignupController::class, 'create']); //show the form of sign up
-
 Route::post('/signup', [SignupController::class, 'store']);//Process the form submission of signup
-
 Route::get('/signin', [SigninController::class, 'create']);//show the form of sign in
-
 Route::post('/signin', [SigninController::class, 'store']); //Process the form submission of signin
-
-Route::get('/home', [HomeController::class, 'show'])->name('home');//show the dashboard page
 
 Route::middleware('auth')->group(function () {
     Route::get('/mydecks', [DeckController::class, 'index'])->name('mydecks');
@@ -28,12 +25,23 @@ Route::middleware('auth')->group(function () {
     Route::get('/decks/{deck}', [DeckController::class, 'show'])->name('decks.show');
     Route::put('/decks/{deck}', [DeckController::class, 'update'])->name('decks.update');
     Route::delete('/decks/{deck}', [DeckController::class, 'destroy'])->name('decks.destroy');
-    
+
     Route::post('/decks/{deck}/flashcards', [FlashcardController::class, 'store'])->name('flashcards.store');
     Route::delete('/flashcards/{flashcard}', [FlashcardController::class, 'destroy'])->name('flashcards.destroy');
+    Route::put('/flashcards/{flashcard}', [FlashcardController::class, 'update'])->name('flashcards.update');
+
+    // Study mode routes
+    Route::get('/decks/{deck}/study/flipcards', [StudyController::class, 'flipcards'])->name('study.flipcards');
+    Route::get('/decks/{deck}/study/multiplechoice', [StudyController::class, 'multiplechoice'])->name('study.multiplechoice');
+    Route::get('/decks/{deck}/study/identification', [StudyController::class, 'identification'])->name('study.identification');
+
+    // Profile routes
+    Route::get('/myprofile', [MyProfileController::class, 'show'])->name('myprofile');
+    Route::put('/myprofile', [MyProfileController::class, 'update'])->name('myprofile.update');
+    Route::delete('/myprofile', [MyProfileController::class, 'destroy'])->name('myprofile.destroy');
 });
 
-Route::get('/myprofile', [MyProfileController::class, 'show'])->name('myprofile');
+
 
 // Teacher Static Routes
 Route::view('/teacher/dashboard', 'teacher.teacher-dashboard')->name('teacher-dashboard');

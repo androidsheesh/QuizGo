@@ -20,8 +20,8 @@ class FlashcardController extends Controller
         }
 
         $request->validate([
-            'question' => 'required|string',
-            'answer'   => 'required|string',
+            'question' => 'required|string|max:255',
+            'answer'   => 'required|string|max:255',
         ]);
 
         $deck->flashcards()->create([
@@ -45,5 +45,24 @@ class FlashcardController extends Controller
         $flashcard->delete();
 
         return redirect()->back()->with('success', 'Flashcard deleted.');
+    }
+    public function update(Flashcard $flashcard, Request $request)
+    {
+        if($flashcard->deck->user_id!= Auth::id()){
+            abort(403, 'Unauthorized action.');
+        }
+
+        $request->validate([
+            'question' => 'required|string|max:255',
+            'answer' => 'required|string|max:255',
+        ]);
+
+        $flashcard->update([
+            'question' => $request->question,
+            'answer' => $request->answer,
+        ]);
+
+        return redirect()->back()->with('Success', 'Flashcard updated successfully.');
+
     }
 }
