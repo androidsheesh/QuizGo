@@ -42,7 +42,7 @@ class FlashcardController extends Controller
             abort(403, 'Unauthorized action.');
         }
 
-        $flashcard->delete();
+        $flashcard->delete($flashcard);
 
         return redirect()->back()->with('success', 'Flashcard deleted.');
     }
