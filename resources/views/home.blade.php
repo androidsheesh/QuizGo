@@ -40,40 +40,45 @@
                 <div class="w-full max-w-2xl">
                     <div class="flex justify-between items-center mb-6">
                         <h3 class="text-lg font-semibold text-slate-700">My decks</h3>
-                        <button class="text-2xl text-slate-300 hover:text-slate-600 transition-colors">+</button>
+                        <a href="{{ route('mydecks') }}" class="text-2xl text-slate-300 hover:text-slate-600 transition-colors" title="Add deck">+</a>
                     </div>
 
-                    <div class="space-y-4">
-                        <div class="group flex items-center bg-white border border-gray-100 rounded-3xl overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer">
-                            <div class="flex-1 p-6 flex justify-between items-center">
-                                <div>
-                                    <h4 class="text-lg font-bold text-slate-800">Laravel</h4>
-                                    <p class="text-slate-400 text-sm">121 cards</p>
-                                </div>
-                                <button class="opacity-0 group-hover:opacity-100 text-slate-300 hover:text-slate-600 transition-all">
-                                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-                                </button>
-                            </div>
-                            <div class="w-8 self-stretch bg-red-500"></div>
+                    @if($decks->isEmpty())
+                        {{-- Empty state --}}
+                        <div class="text-center py-14 bg-white rounded-3xl border border-gray-100 shadow-sm">
+                            <div class="text-4xl mb-3">📭</div>
+                            <h4 class="text-base font-bold text-slate-700">No decks yet</h4>
+                            <p class="text-slate-400 text-sm mt-1">Create your first deck to start studying!</p>
+                            <a href="{{ route('mydecks') }}" class="inline-block mt-5 px-6 py-2 bg-emerald-500 text-white text-sm font-semibold rounded-full hover:bg-emerald-600 transition-colors shadow-lg shadow-emerald-200">
+                                Create a deck
+                            </a>
                         </div>
+                    @else
+                        @php
+                            $accentColors = ['bg-emerald-400', 'bg-blue-400', 'bg-amber-400', 'bg-rose-400', 'bg-violet-400'];
+                        @endphp
 
-                        <div class="group flex items-center bg-white border border-gray-100 rounded-3xl overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer">
-                            <div class="flex-1 p-6 flex justify-between items-center">
-                                <div>
-                                    <h4 class="text-lg font-bold text-slate-800">Untitled</h4>
-                                    <p class="text-slate-400 text-sm">12 cards</p>
-                                </div>
-                                <button class="opacity-0 group-hover:opacity-100 text-slate-300 hover:text-slate-600 transition-all">
-                                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-                                </button>
-                            </div>
-                            <div class="w-8 self-stretch bg-yellow-400"></div>
+                        <div class="space-y-4">
+                            @foreach($decks as $index => $deck)
+                                <a href="{{ route('decks.show', $deck) }}" class="group flex items-center bg-white border border-gray-100 rounded-3xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer">
+                                    <div class="flex-1 p-6 flex justify-between items-center">
+                                        <div>
+                                            <h4 class="text-lg font-bold text-slate-800 group-hover:text-emerald-600 transition-colors">{{ $deck->title }}</h4>
+                                            <p class="text-slate-400 text-sm">{{ $deck->flashcards_count }} {{ Str::plural('card', $deck->flashcards_count) }}</p>
+                                        </div>
+                                        <span class="opacity-0 group-hover:opacity-100 text-slate-300 transition-all">
+                                            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+                                        </span>
+                                    </div>
+                                    <div class="w-3 self-stretch {{ $accentColors[$index % count($accentColors)] }}"></div>
+                                </a>
+                            @endforeach
                         </div>
-                    </div>
+                    @endif
 
-                    <button class="w-full mt-8 py-2 text-slate-400 text-sm font-medium hover:text-slate-600 transition-colors">
-                        View all
-                    </button>
+                    <a href="{{ route('mydecks') }}" class="block w-full mt-8 py-2 text-center text-slate-400 text-sm font-medium hover:text-emerald-600 transition-colors">
+                        See all →
+                    </a>
                 </div>
             </div>
         </main>
