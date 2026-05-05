@@ -1,18 +1,19 @@
 <x-layout>
+
     <div class="flex min-h-screen bg-[#F9FAFB]">
 
         <x-sidebar/>
         {{--
             [ MAIN CONTENT ]
         --}}
-        <x-dropdown-profile/>
-        <main class="flex-1 p-6 md:p-12 overflow-y-auto relative">
+        <main class="flex-1 p-6 md:p-12 relative">
+            <x-dropdown-profile/>
 
             <div class="max-w-3xl mx-auto flex flex-col items-center">
 
                 <div class="flex flex-col items-center text-center mb-10">
-                    <div class="w-24 h-24 bg-emerald-400 rounded-2xl flex items-center justify-center shadow-xl shadow-emerald-200/50 transform rotate-3 mb-8">
-                        <div class="w-12 h-12 bg-emerald-900/20 rounded-lg border-b-4 border-emerald-900/30"></div>
+                    <div class="w-24 h-24 bg-indigo-500 rounded-xl flex items-center justify-center shadow-[0_4px_0_0_#4338ca] group-hover:scale-105 transition-transform">
+                        <div class="w-8 h-8 bg-white rounded-sm rotate-45"></div>
                     </div>
                     <h2 class="text-3xl md:text-4xl font-medium text-slate-800">What do you want to Study?</h2>
                 </div>
