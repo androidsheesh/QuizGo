@@ -3,7 +3,7 @@
     <div class="p-6 md:p-8 mb-4 flex items-center justify-center md:justify-start">
         <a href="{{ route('home') }}" class="flex items-center gap-3 group">
             <div class="w-10 h-10 bg-indigo-500 rounded-xl flex items-center justify-center shadow-[0_4px_0_0_#4338ca] group-hover:scale-105 transition-transform">
-                <div class="w-4 h-4 bg-white rounded-sm rotate-45"></div>
+                <div class="w-5 h-5 bg-white rounded-sm rotate-45"></div>
             </div>
             <span class="hidden md:block text-slate-900 font-black text-2xl tracking-tighter">QuizGo</span>
         </a>
