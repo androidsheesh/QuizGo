@@ -142,6 +142,9 @@
                     @endforeach
                     </div>
                 @endif
+                <div class="mt-10 mb-20">
+                    {{ $decks->links() }}
+                </div>
             </div>
 
         </main>
