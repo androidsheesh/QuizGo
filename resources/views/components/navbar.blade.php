@@ -1,8 +1,8 @@
 
 <nav id="navbar" class="relative z-10 flex justify-between items-center px-6 md:px-12 max-w-7xl mx-auto w-full backdrop-blur-md bg-white/10 py-4 rounded-2xl border border-white/20">
     <a href="/" class="logo text-black font-black text-3xl tracking-tight flex items-center gap-2">
-        <div class="w-8 h-8 bg-black rounded-lg flex items-center justify-center">
-            <div class="w-4 h-4 bg-[#7bfeb6]"></div>
+        <div class="w-8 h-8 bg-indigo-500 rounded-xl flex items-center justify-center shadow-[0_4px_0_0_#4338ca] group-hover:scale-105 transition-transform">
+            <div class="w-4 h-4 bg-white rounded-sm rotate-45"></div>
         </div>
         QuizGo
     </a>
