@@ -14,7 +14,12 @@ class DeckController extends Controller
     public function index()
     {
         // Load decks for the logged-in user with their flashcard counts
-        $decks = Auth::user()->decks()->withCount('flashcards')->latest()->get();
+        $decks = Auth::user()
+            ->decks()
+            ->withCount('flashcards')
+            ->latest()
+            ->paginate(9);
+
         return view('mydecks', compact('decks'));
     }
 
