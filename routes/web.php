@@ -10,6 +10,13 @@ use App\Http\Controllers\FlashcardController;
 use App\Http\Controllers\StudyController;
 use App\Http\Controllers\MyProfileController;
 use App\Http\Controllers\WelcomeController;
+use App\Http\Controllers\StudentClassroomController;
+use App\Http\Controllers\StudentQuizController;
+use App\Http\Controllers\TeacherdashboardController;
+use App\Http\Controllers\TeacherQuizController;
+use App\Http\Controllers\TeacherClassroomController;
+use App\Http\Controllers\TeacherAiQuizController;
+use App\Http\Controllers\TeacherprofileController;
 
 Route::get('/', [WelcomeController::class, 'show'])->name('welcome');
 Route::get('/home', [HomeController::class, 'show'])->name('home');//show the dashboard page
@@ -39,14 +46,55 @@ Route::middleware('auth')->group(function () {
     Route::get('/myprofile', [MyProfileController::class, 'show'])->name('myprofile');
     Route::put('/myprofile', [MyProfileController::class, 'update'])->name('myprofile.update');
     Route::delete('/myprofile', [MyProfileController::class, 'destroy'])->name('myprofile.destroy');
+
+    // Student Assignments & Classrooms
+    Route::get('/assignments', [StudentClassroomController::class, 'index'])->name('student.assignments');
+    Route::get('/classroom/{classroom}', [StudentClassroomController::class, 'show'])->name('student.classroom.show');
+
+    // Student Quiz Taking
+    Route::get('/quiz/{assignment}/take', [StudentQuizController::class, 'take'])->name('student.quiz.take');
+    Route::post('/quiz/{assignment}/submit', [StudentQuizController::class, 'submit'])->name('student.quiz.submit');
+    Route::get('/quiz/results/{attempt}', [StudentQuizController::class, 'results'])->name('student.quiz.results');
+
+    // Student join classroom via code
+    Route::post('/classroom/join', [StudentClassroomController::class, 'join'])->name('classroom.join');
 });
 
 
+// ─── Teacher Routes (auth + teacher middleware) ───
 
-// Teacher Static Routes
-Route::view('/teacher/dashboard', 'teacher.teacher-dashboard')->name('teacher-dashboard');
-Route::view('/teacher/assign-quiz', 'teacher.assign-quiz')->name('assign-quiz');
-Route::view('/teacher/profile', 'teacher.teacher-profile')->name('teacher-profile');
+Route::middleware('auth')->group(function (){
+    Route::get('/teacher-dashboard', [TeacherdashboardController::class, 'show'])->name('teacher.dashboard');
+
+});
+
+Route::middleware(['auth', 'teacher'])->prefix('teacher')->name('teacher.')->group(function () {
+
+    // Classrooms
+    Route::post('/classrooms', [TeacherClassroomController::class, 'store'])->name('classroom.store');
+    Route::get('/classrooms/{classroom}', [TeacherClassroomController::class, 'show'])->name('classroom.show');
+    Route::delete('/classrooms/{classroom}', [TeacherClassroomController::class, 'destroy'])->name('classroom.destroy');
+    Route::post('/classrooms/{classroom}/students', [TeacherClassroomController::class, 'addStudent'])->name('classroom.addStudent');
+    Route::delete('/classrooms/{classroom}/students/{user}', [TeacherClassroomController::class, 'removeStudent'])->name('classroom.removeStudent');
+
+    // Quizzes
+    Route::get('/quizzes', [TeacherQuizController::class, 'index'])->name('quiz.index');
+    Route::get('/quizzes/create', [TeacherQuizController::class, 'create'])->name('quiz.create');
+    Route::post('/quizzes', [TeacherQuizController::class, 'store'])->name('quiz.store');
+    Route::get('/quizzes/{quiz}', [TeacherQuizController::class, 'show'])->name('quiz.show');
+    Route::delete('/quizzes/{quiz}', [TeacherQuizController::class, 'destroy'])->name('quiz.destroy');
+    Route::post('/quizzes/assign', [TeacherQuizController::class, 'assign'])->name('quiz.assign');
+    Route::delete('/quizzes/assignments/{assignment}', [TeacherQuizController::class, 'unassign'])->name('quiz.unassign');
+
+    // AI Quiz (front-end only)
+    Route::get('/quizzes/ai', [TeacherAiQuizController::class, 'showUpload'])->name('quiz.ai');
+    Route::post('/quizzes/ai', [TeacherAiQuizController::class, 'generate'])->name('quiz.ai.generate');
+
+    // Profile
+    Route::get('/profile', [TeacherprofileController::class, 'show'])->name('profile');
+    Route::put('/profile', [TeacherprofileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [TeacherprofileController::class, 'destroy'])->name('profile.destroy');
+});
 
 
 Route::middleware('auth')->group(function () {
