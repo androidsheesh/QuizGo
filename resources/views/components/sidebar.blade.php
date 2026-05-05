@@ -24,6 +24,14 @@
             <span class="hidden md:block font-semibold">My Decks</span>
         </a>
 
+        {{-- ASSIGNMENTS LINK --}}
+        <a href="{{ route('student.assignments') }}"
+           class="flex items-center space-x-3 p-3 rounded-2xl transition-all
+           {{ request()->routeIs('student.assignments') || request()->routeIs('student.classroom.*') || request()->routeIs('student.quiz.*') ? 'bg-slate-50 border border-slate-100 text-slate-900' : 'text-slate-400 hover:bg-slate-50 hover:text-slate-600' }}">
+            <span class="text-xl">📋</span>
+            <span class="hidden md:block font-semibold">Assignments</span>
+        </a>
+
         {{-- PROFILE LINK --}}
         <a href="{{ route('myprofile') }}"
            class="flex items-center space-x-3 p-3 rounded-2xl transition-all
