@@ -11,9 +11,12 @@
                     <h2 class="text-3xl font-bold text-slate-800">My decks</h2>
 
                     <div class="flex items-center space-x-4">
-                        <button @click="showDeckModal = true" class="flex items-center space-x-2 px-6 py-2.5 bg-slate-900 text-white rounded-2xl shadow-lg shadow-slate-200 hover:bg-slate-800 transition-all">
-                            <span class="text-lg">＋</span>
-                            <span class="font-semibold text-sm">Add deck</span>
+                        <button @click="showDeckModal = true"
+                            class="group flex items-center space-x-2 px-6 py-2.5 bg-indigo-600 text-white rounded-2xl
+                                shadow-[0_4px_0_0_#4338ca] hover:shadow-[0_2px_0_0_#4338ca] hover:translate-y-[2px]
+                                active:shadow-none active:translate-y-[4px] transition-all">
+                            <span class="text-xl font-black group-hover:rotate-90 transition-transform duration-300">＋</span>
+                            <span class="font-bold text-sm tracking-tight">Add deck</span>
                         </button>
                     </div>
                 </div>
@@ -142,9 +145,47 @@
                     @endforeach
                     </div>
                 @endif
-                <div class="mt-10 mb-20">
-                    {{ $decks->links() }}
-                </div>
+                {{-- Pagination --}}
+                @if ($decks->hasPages())
+                    <nav role="navigation" aria-label="Pagination Navigation" class="flex items-center justify-center space-x-2 mt-12 mb-20">
+                        {{-- Previous Page Link --}}
+                        @if ($decks->onFirstPage())
+                            <span class="px-4 py-2 text-slate-300 bg-white border border-gray-100 rounded-2xl cursor-not-allowed">
+                                ← <span class="hidden md:inline ml-1">Prev</span>
+                            </span>
+                        @else
+                            <a href="{{ $decks->previousPageUrl() }}" class="px-4 py-2 text-slate-600 bg-white border border-gray-100 rounded-2xl hover:bg-slate-50 hover:border-emerald-300 transition-all shadow-sm">
+                                ← <span class="hidden md:inline ml-1">Prev</span>
+                            </a>
+                        @endif
+
+                        {{-- Pagination Elements --}}
+                        <div class="flex items-center bg-white border border-gray-100 rounded-2xl p-1 shadow-sm">
+                            @foreach ($decks->getUrlRange(max(1, $decks->currentPage() - 1), min($decks->lastPage(), $decks->currentPage() + 1)) as $page => $url)
+                                @if ($page == $decks->currentPage())
+                                    <span class="w-10 h-10 flex items-center justify-center bg-emerald-500 text-white font-bold rounded-xl shadow-md shadow-emerald-200">
+                                        {{ $page }}
+                                    </span>
+                                @else
+                                    <a href="{{ $url }}" class="w-10 h-10 flex items-center justify-center text-slate-500 font-semibold rounded-xl hover:bg-slate-50 hover:text-emerald-600 transition-all">
+                                        {{ $page }}
+                                    </a>
+                                @endif
+                            @endforeach
+                        </div>
+
+                        {{-- Next Page Link --}}
+                        @if ($decks->hasMorePages())
+                            <a href="{{ $decks->nextPageUrl() }}" class="px-4 py-2 text-slate-600 bg-white border border-gray-100 rounded-2xl hover:bg-slate-50 hover:border-emerald-300 transition-all shadow-sm">
+                                <span class="hidden md:inline mr-1">Next</span> →
+                            </a>
+                        @else
+                            <span class="px-4 py-2 text-slate-300 bg-white border border-gray-100 rounded-2xl cursor-not-allowed">
+                                <span class="hidden md:inline mr-1">Next</span> →
+                            </span>
+                        @endif
+                    </nav>
+                @endif
             </div>
 
         </main>
