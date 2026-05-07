@@ -16,7 +16,11 @@ class StudentClassroomController extends Controller
     {
         /** @var \App\Models\User $student */
         $student = Auth::user();
-        $classrooms = $student->enrolledClassrooms()->withCount('quizAssignments')->with('teacher')->get();
+        $classrooms = $student
+        ->enrolledClassrooms()
+        ->withCount('quizAssignments')
+        ->with('teacher')
+        ->paginate(6);
 
         return view('student.assignments', [
             'classrooms' => $classrooms,

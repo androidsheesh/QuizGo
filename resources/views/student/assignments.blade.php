@@ -87,6 +87,49 @@
                     </div>
                 @endif
 
+                {{-- Pagination --}}
+                @if ($classrooms->hasPages())
+                    <nav role="navigation" aria-label="Pagination Navigation" class="flex items-center justify-center space-x-2 mt-12 mb-20">
+                        {{-- Previous Page Link --}}
+                        @if ($classrooms->onFirstPage())
+                            <span class="px-4 py-2 text-slate-300 bg-white border border-gray-100 rounded-2xl cursor-not-allowed">
+                                ← <span class="hidden md:inline ml-1">Prev</span>
+                            </span>
+                        @else
+                            <a href="{{ $classrooms->previousPageUrl() }}" class="px-4 py-2 text-slate-600 bg-white border border-gray-100 rounded-2xl hover:bg-slate-50 hover:border-emerald-300 transition-all shadow-sm">
+                                ← <span class="hidden md:inline ml-1">Prev</span>
+                            </a>
+                        @endif
+
+                        {{-- Pagination Elements --}}
+                        <div class="flex items-center bg-white border border-gray-100 rounded-2xl p-1 shadow-sm">
+                            @foreach ($classrooms->getUrlRange(max(1, $classrooms->currentPage() - 1), min($classrooms->lastPage(), $classrooms->currentPage() + 1)) as $page => $url)
+                                @if ($page == $classrooms->currentPage())
+                                    <span class="w-10 h-10 flex items-center justify-center bg-emerald-500 text-white font-bold rounded-xl shadow-md shadow-emerald-200">
+                                        {{ $page }}
+                                    </span>
+                                @else
+                                    <a href="{{ $url }}" class="w-10 h-10 flex items-center justify-center text-slate-500 font-semibold rounded-xl hover:bg-slate-50 hover:text-emerald-600 transition-all">
+                                        {{ $page }}
+                                    </a>
+                                @endif
+                            @endforeach
+                        </div>
+
+                        {{-- Next Page Link --}}
+                        @if ($classrooms->hasMorePages())
+                            <a href="{{ $classrooms->nextPageUrl() }}" class="px-4 py-2 text-slate-600 bg-white border border-gray-100 rounded-2xl hover:bg-slate-50 hover:border-emerald-300 transition-all shadow-sm">
+                                <span class="hidden md:inline mr-1">Next</span> →
+                            </a>
+                        @else
+                            <span class="px-4 py-2 text-slate-300 bg-white border border-gray-100 rounded-2xl cursor-not-allowed">
+                                <span class="hidden md:inline mr-1">Next</span> →
+                            </span>
+                        @endif
+                    </nav>
+                @endif
+
+
             </div>
         </main>
     </div>
