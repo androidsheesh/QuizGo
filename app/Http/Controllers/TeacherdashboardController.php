@@ -21,16 +21,21 @@ class TeacherdashboardController extends Controller
             ->where('is_active', true)
             ->count();
 
+        // Total classes count
+        $totalClasses = Classroom::where('teacher_id', $teacher->id)->count();
+
+        // Total students across all classes
+        $totalStudents = \Illuminate\Support\Facades\DB::table('classroom_student')
+            ->join('classrooms', 'classroom_student.classroom_id', '=', 'classrooms.id')
+            ->where('classrooms.teacher_id', $teacher->id)
+            ->count();
+
         // Classrooms with student counts
-        // FIX: Removed the duplicated 'teacher_id', $teacher->id arguments
         $classrooms = Classroom::where('teacher_id', $teacher->id)
             ->withCount('students')
             ->with(['quizAssignments.quiz', 'quizAssignments.attempts'])
             ->latest()
-            ->get();
-
-        // Total students across all classes
-        $totalStudents = $classrooms->sum('students_count');
+            ->paginate(9, ['*'], 'classesPage');
 
         // Recent quizzes
         // FIX: Removed the duplicated 'teacher_id', $teacher->id arguments
@@ -38,8 +43,7 @@ class TeacherdashboardController extends Controller
             ->withCount('questions')
             ->with(['assignments.classroom'])
             ->latest()
-            ->take(5)
-            ->get();
+            ->paginate(9, ['*'], 'quizzesPage');
 
         // Average score across all attempts
         $avgScore = QuizAttempt::whereHas('quizAssignment', function ($q) use ($teacher) {
@@ -52,7 +56,7 @@ class TeacherdashboardController extends Controller
             'totalStudents' => $totalStudents,
             'recentQuizzes' => $recentQuizzes,
             'avgScore'      => round($avgScore ?? 0),
-            'totalClasses'  => $classrooms->count(),
+            'totalClasses'  => $totalClasses,
         ]);
     }
 }

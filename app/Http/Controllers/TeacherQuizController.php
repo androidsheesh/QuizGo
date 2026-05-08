@@ -107,7 +107,7 @@ class TeacherQuizController extends Controller
 
         $quiz->load(['questions', 'assignments.classroom', 'assignments.attempts.student']);
 
-        return view('teacher.quiz-detail', [
+        return view('teacher.quiz.show', [
             'quiz' => $quiz,
         ]);
     }
