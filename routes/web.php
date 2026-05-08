@@ -1,30 +1,35 @@
 <?php
 
-use App\Http\Controllers\ProfileController;
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\SignupController;
-use App\Http\Controllers\SigninController;
-use App\Http\Controllers\HomeController;
 use App\Http\Controllers\DeckController;
 use App\Http\Controllers\FlashcardController;
-use App\Http\Controllers\StudyController;
+use App\Http\Controllers\HomeController;
 use App\Http\Controllers\MyProfileController;
-use App\Http\Controllers\WelcomeController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\SigninController;
+use App\Http\Controllers\SignupController;
 use App\Http\Controllers\StudentClassroomController;
 use App\Http\Controllers\StudentQuizController;
-use App\Http\Controllers\TeacherdashboardController;
-use App\Http\Controllers\TeacherQuizController;
-use App\Http\Controllers\TeacherClassroomController;
+use App\Http\Controllers\StudyController;
 use App\Http\Controllers\TeacherAiQuizController;
+use App\Http\Controllers\TeacherClassroomController;
+use App\Http\Controllers\TeacherdashboardController;
 use App\Http\Controllers\TeacherprofileController;
+use App\Http\Controllers\TeacherQuizController;
+use App\Http\Controllers\WelcomeController;
+use Illuminate\Support\Facades\Route;
 
 Route::get('/', [WelcomeController::class, 'show'])->name('welcome');
-Route::get('/home', [HomeController::class, 'show'])->name('home');//show the dashboard page
+Route::get('/home', [HomeController::class, 'show'])->name('home'); // show the dashboard page
 
-Route::get('/signup', [SignupController::class, 'create']); //show the form of sign up
-Route::post('/signup', [SignupController::class, 'store']);//Process the form submission of signup
-Route::get('/signin', [SigninController::class, 'create']);//show the form of sign in
-Route::post('/signin', [SigninController::class, 'store']); //Process the form submission of signin
+Route::middleware('auth')->group(function () {
+    Route::post('/generate/topic', [HomeController::class, 'generateFromTopic'])->name('generate.topic');
+    Route::post('/generate/text', [HomeController::class, 'generateFromText'])->name('generate.text');
+    Route::post('/generate/pdf', [HomeController::class, 'generateFromPdf'])->name('generate.pdf');
+});
+Route::get('/signup', [SignupController::class, 'create']); // show the form of sign up
+Route::post('/signup', [SignupController::class, 'store']); // Process the form submission of signup
+Route::get('/signin', [SigninController::class, 'create']); // show the form of sign in
+Route::post('/signin', [SigninController::class, 'store']); // Process the form submission of signin
 
 Route::middleware('auth')->group(function () {
     Route::get('/mydecks', [DeckController::class, 'index'])->name('mydecks');
@@ -60,10 +65,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/classroom/join', [StudentClassroomController::class, 'join'])->name('classroom.join');
 });
 
-
 // ─── Teacher Routes (auth + teacher middleware) ───
 
-Route::middleware('auth')->group(function (){
+Route::middleware('auth')->group(function () {
     Route::get('/teacher-dashboard', [TeacherdashboardController::class, 'show'])->name('teacher.dashboard');
 
 });
@@ -81,21 +85,25 @@ Route::middleware(['auth', 'teacher'])->prefix('teacher')->name('teacher.')->gro
     Route::get('/quizzes', [TeacherQuizController::class, 'index'])->name('quiz.index');
     Route::get('/quizzes/create', [TeacherQuizController::class, 'create'])->name('quiz.create');
     Route::post('/quizzes', [TeacherQuizController::class, 'store'])->name('quiz.store');
-    Route::get('/quizzes/{quiz}', [TeacherQuizController::class, 'show'])->name('quiz.show');
-    Route::delete('/quizzes/{quiz}', [TeacherQuizController::class, 'destroy'])->name('quiz.destroy');
     Route::post('/quizzes/assign', [TeacherQuizController::class, 'assign'])->name('quiz.assign');
     Route::delete('/quizzes/assignments/{assignment}', [TeacherQuizController::class, 'unassign'])->name('quiz.unassign');
 
-    // AI Quiz (front-end only)
+    // AI Quiz
+    // Keep specific AI routes before the /quizzes/{quiz} wildcard route.
     Route::get('/quizzes/ai', [TeacherAiQuizController::class, 'showUpload'])->name('quiz.ai');
     Route::post('/quizzes/ai', [TeacherAiQuizController::class, 'generate'])->name('quiz.ai.generate');
+    Route::post('/quizzes/ai/topic', [TeacherAiQuizController::class, 'generateFromTopic'])->name('quiz.ai.topic');
+    Route::post('/quizzes/ai/text', [TeacherAiQuizController::class, 'generateFromText'])->name('quiz.ai.text');
+    Route::post('/quizzes/ai/pdf', [TeacherAiQuizController::class, 'generateFromPdf'])->name('quiz.ai.pdf');
+
+    Route::get('/quizzes/{quiz}', [TeacherQuizController::class, 'show'])->name('quiz.show');
+    Route::delete('/quizzes/{quiz}', [TeacherQuizController::class, 'destroy'])->name('quiz.destroy');
 
     // Profile
     Route::get('/profile', [TeacherprofileController::class, 'show'])->name('profile');
     Route::put('/profile', [TeacherprofileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [TeacherprofileController::class, 'destroy'])->name('profile.destroy');
 });
-
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
