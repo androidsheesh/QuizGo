@@ -170,10 +170,10 @@
                                      :class="dragging ? 'border-emerald-400 bg-emerald-50' : 'border-slate-200 bg-slate-50'"
                                      class="border-2 border-dashed rounded-2xl p-10 text-center transition-all cursor-pointer"
                                      @click="$refs.fileInput.click()">
-                                    <input type="file" name="files[]" multiple accept=".pdf,.doc,.docx,.txt,.pptx" class="hidden" x-ref="fileInput" @change="handleFiles($event)">
+                                    <input type="file" name="files[]" accept=".pdf,.txt" class="hidden" x-ref="fileInput" @change="handleFiles($event)">
                                     <div class="text-4xl mb-3">📁</div>
                                     <p class="font-semibold text-slate-600">Drop files here or click to upload</p>
-                                    <p class="text-sm text-slate-400 mt-1">PDF, DOC, TXT, PPTX — Max 10MB each</p>
+                                    <p class="text-sm text-slate-400 mt-1">PDF or TXT - Max 10MB</p>
                                 </div>
                                 <template x-if="files.length > 0">
                                     <div class="mt-4 space-y-2">
@@ -197,12 +197,9 @@
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                                 <div>
                                     <label class="block text-sm font-semibold text-slate-600 mb-2">Number of Questions</label>
-                                    <select class="w-full p-3 bg-slate-50 border border-slate-100 rounded-xl text-slate-700 focus:outline-none">
-                                        <option>5 Questions</option>
-                                        <option>10 Questions</option>
-                                        <option selected>15 Questions</option>
-                                        <option>20 Questions</option>
-                                        <option>30 Questions</option>
+                                    <select name="count" class="w-full p-3 bg-slate-50 border border-slate-100 rounded-xl text-slate-700 focus:outline-none">
+                                        <option value="5">5 Questions</option>
+                                        <option value="10" selected>10 Questions</option>
                                     </select>
                                 </div>
                                 <div>

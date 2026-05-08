@@ -1,6 +1,43 @@
 <x-layout>
     <div class="fixed inset-0 bg-[#F9FAFB] flex flex-col" x-data="flipcardStudy()">
+        <style>
+        /* 1. Create the 3D space */
+        .study-flip-container {
+            perspective: 1000px;
+            width: 100%;
+            height: 100%;
+        }
 
+        /* 2. The wrapper that actually rotates */
+        .study-flip-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.5s ease-in-out;
+            transform-style: preserve-3d;
+        }
+
+        /* 3. The class Alpine.js will toggle */
+        .study-flip-container.is-flipped .study-flip-inner {
+            transform: rotateY(180deg);
+        }
+
+        /* 4. Common styles for both sides */
+        .study-flip-front,
+        .study-flip-back {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            -webkit-backface-visibility: hidden; /* Critical for Safari */
+            backface-visibility: hidden;
+        }
+
+        /* 5. Start the back face already flipped 180deg */
+        .study-flip-back {
+            transform: rotateY(180deg);
+        }
+    </style>
         {{-- Top Bar --}}
         <div class="px-6 md:px-12 pt-5 pb-3 shrink-0">
             <div class="max-w-3xl mx-auto flex items-center justify-between">
@@ -30,33 +67,44 @@
             </div>
         </div>
 
-        {{-- Card Area (fills remaining space) --}}
-        <div class="flex-1 flex items-center justify-center px-6 min-h-0">
-            <div class="w-full max-w-xl">
+{{-- Card Area --}}
+        <div class="flex-1 flex items-center justify-center px-6 min-h-0 mb-6">
+            <div class="w-full max-w-xl h-[min(360px,50vh)]">
 
-                {{-- Flip Card --}}
-                <div class="cursor-pointer" @click="flipped = !flipped" style="perspective: 1000px;">
-                    <div class="relative w-full"
-                        style="transform-style: preserve-3d; height: min(360px, 50vh); transition: transform 0.6s ease-in-out;"
-                        :style="flipped ? 'transform: rotateY(180deg)' : 'transform: rotateY(0deg)'">
+                {{-- Flip Container --}}
+                <div class="study-flip-container cursor-pointer"
+                     @click="flipped = !flipped"
+                     :class="{ 'is-flipped': flipped }">
+
+                    <div class="study-flip-inner shadow-xl shadow-slate-200/50 rounded-[2.5rem]">
 
                         {{-- Front (Question) --}}
-                        <div class="absolute inset-0 bg-white rounded-[2rem] shadow-lg shadow-slate-200/50 border border-gray-100 flex flex-col items-center justify-center p-8 md:p-10"
-                            style="backface-visibility: hidden;">
-                            <p class="text-[10px] font-bold text-emerald-400 uppercase tracking-widest mb-4">Question</p>
-                            <p class="text-xl md:text-2xl font-bold text-slate-800 text-center leading-relaxed" x-text="cards[current]?.question"></p>
-                            <p class="mt-6 text-xs text-slate-300 font-medium">Click to reveal answer</p>
+                        <div class="study-flip-front bg-white rounded-[2.5rem] border border-gray-100 flex flex-col items-center p-8 md:p-12">
+                            <span class="text-[10px] font-bold text-emerald-500 uppercase tracking-widest shrink-0">Question</span>
+
+                            {{-- Inner wrapper for long text scrolling --}}
+                            <div class="flex-1 w-full flex items-center justify-center overflow-y-auto my-4">
+                                <p class="text-xl md:text-2xl font-bold text-slate-800 text-center leading-relaxed" x-text="cards[current]?.question"></p>
+                            </div>
+
+                            <p class="text-xs text-slate-300 font-medium animate-pulse shrink-0">Click to reveal answer</p>
                         </div>
 
                         {{-- Back (Answer) --}}
-                        <div class="absolute inset-0 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-[2rem] shadow-lg shadow-emerald-200/50 flex flex-col items-center justify-center p-8 md:p-10"
-                            style="backface-visibility: hidden; transform: rotateY(180deg);">
-                            <p class="text-[10px] font-bold text-emerald-100 uppercase tracking-widest mb-4">Answer</p>
-                            <p class="text-xl md:text-2xl font-bold text-white text-center leading-relaxed" x-text="cards[current]?.answer"></p>
-                            <p class="mt-6 text-xs text-emerald-200 font-medium">Click to see question</p>
+                        <div class="study-flip-back bg-gradient-to-br from-emerald-500 to-teal-600 rounded-[2.5rem] flex flex-col items-center p-8 md:p-12 shadow-xl shadow-emerald-200/50">
+                            <span class="text-[10px] font-bold text-emerald-100 uppercase tracking-widest shrink-0">Answer</span>
+
+                            {{-- Inner wrapper for long text scrolling --}}
+                            <div class="flex-1 w-full flex items-center justify-center overflow-y-auto my-4">
+                                <p class="text-xl md:text-2xl font-bold text-white text-center leading-relaxed" x-text="cards[current]?.answer"></p>
+                            </div>
+
+                            <p class="text-xs text-emerald-100/60 font-medium shrink-0">Click to see question</p>
                         </div>
+
                     </div>
                 </div>
+
             </div>
         </div>
 

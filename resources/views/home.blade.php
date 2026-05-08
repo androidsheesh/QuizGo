@@ -1,42 +1,105 @@
-<x-layout>
-
+<x-layout title="Quizgo | Home">
     <div class="flex min-h-screen bg-[#F9FAFB]">
-
         <x-sidebar/>
-        {{--
-            [ MAIN CONTENT ]
-        --}}
+
         <main class="flex-1 p-6 md:p-12 relative">
             <x-dropdown-profile/>
 
             <div class="max-w-3xl mx-auto flex flex-col items-center">
 
+                {{-- Header --}}
                 <div class="flex flex-col items-center text-center mb-10">
-                    <div class="w-24 h-24 bg-indigo-500 rounded-xl flex items-center justify-center shadow-[0_4px_0_0_#4338ca] group-hover:scale-105 transition-transform">
+                    <div class="w-24 h-24 bg-indigo-500 rounded-xl flex items-center justify-center shadow-[0_4px_0_0_#4338ca]">
                         <div class="w-12 h-12 bg-white rounded-sm rotate-45"></div>
                     </div>
-                    <h2 class="text-3xl md:text-4xl font-medium text-slate-800">What do you want to Study?</h2>
+                    <h2 class="text-3xl md:text-4xl font-medium text-slate-800 mt-4">What do you want to Study?</h2>
                 </div>
 
-                <div class="w-full mb-8">
-                    <input type="text" placeholder="I want to study..."
-                           class="w-full p-6 bg-white border border-gray-200 rounded-[2rem] text-xl shadow-sm focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-blue-400 transition-all placeholder:text-gray-300">
-                </div>
+                {{-- AI errors --}}
+                @if ($errors->any())
+                    <div class="w-full mb-4 p-4 bg-red-50 border border-red-200 rounded-2xl text-red-600 text-sm">
+                        {{ $errors->first() }}
+                    </div>
+                @endif
 
-                <div class="flex flex-wrap justify-center gap-3 mb-16">
-                    <button class="flex items-center space-x-2 px-6 py-2.5 bg-white border border-gray-200 rounded-full text-slate-600 font-medium hover:bg-slate-50 transition-all">
-                        <span>📤</span> <span>Upload</span>
-                    </button>
-                    <button class="flex items-center space-x-2 px-6 py-2.5 bg-white border border-gray-200 rounded-full text-slate-600 font-medium hover:bg-slate-50 transition-all">
-                        <span>📋</span> <span>Paste</span>
-                    </button>
-                    <button class="flex items-center space-x-2 px-6 py-2.5 bg-white border border-gray-200 rounded-full text-slate-600 font-medium hover:bg-slate-50 transition-all">
-                        <span>📄</span> <span>PDF</span>
-                    </button>
-                    <button class="flex items-center space-x-2 px-6 py-2.5 bg-white border border-gray-200 rounded-full text-slate-600 font-medium hover:bg-slate-50 transition-all">
-                        <span>📂</span> <span>Decks</span>
-                    </button>
-                </div>
+                {{-- Success message --}}
+                @if (session('success'))
+                    <div class="w-full mb-4 p-4 bg-green-50 border border-green-200 rounded-2xl text-green-600 text-sm">
+                        ✅ {{ session('success') }}
+                    </div>
+                @endif
+
+                {{-- Action buttons + collapsible panels --}}
+                <div class="w-full flex flex-col items-center gap-3 mb-10" x-data="{ active: 'topic' }">
+
+                    <div class="flex flex-wrap justify-center gap-3 mb-2">
+                        <button @click="active = 'topic'" class="flex items-center space-x-2 px-6 py-2.5 bg-white border border-gray-200 rounded-full text-slate-600 font-medium hover:bg-slate-50 transition-all" :class="{ 'border-indigo-400 bg-indigo-50 text-indigo-600': active === 'topic' }">
+                            <span>💡</span><span>Topic</span>
+                        </button>
+                        <button @click="active = 'paste'" class="flex items-center space-x-2 px-6 py-2.5 bg-white border border-gray-200 rounded-full text-slate-600 font-medium hover:bg-slate-50 transition-all" :class="{ 'border-indigo-400 bg-indigo-50 text-indigo-600': active === 'paste' }">
+                            <span>📋</span><span>Paste</span>
+                        </button>
+                        <button @click="active = 'pdf'" class="flex items-center space-x-2 px-6 py-2.5 bg-white border border-gray-200 rounded-full text-slate-600 font-medium hover:bg-slate-50 transition-all" :class="{ 'border-indigo-400 bg-indigo-50 text-indigo-600': active === 'pdf' }">
+                            <span>📄</span><span>PDF</span>
+                        </button>
+                    </div>
+
+                    {{-- Topic Panel --}}
+                    <div x-show="active === 'topic'" x-transition class="w-full">
+                        <form method="POST" action="{{ route('generate.topic') }}">
+                            @csrf
+                            <div class="flex items-center space-x-3 mb-3 pl-2">
+                                <label class="text-sm font-semibold text-slate-600">Flashcard Count (Max 10):</label>
+                                <input type="number" name="count" min="1" max="10" value="10" class="w-20 p-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400">
+                            </div>
+                            <div class="relative">
+                                <input type="text" name="topic" placeholder="I want to study..." value="{{ old('topic') }}" required class="w-full p-6 pr-16 bg-white border border-gray-200 rounded-[2rem] text-xl shadow-sm focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-400 transition-all placeholder:text-gray-300">
+                                <button type="submit" class="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-indigo-500 hover:bg-indigo-600 rounded-full flex items-center justify-center transition-colors shadow-md shadow-indigo-200" title="Generate">
+                                    <svg class="text-white w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 5l7 7-7 7M5 5l7 7-7 7"/></svg>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    {{-- Paste Panel --}}
+                    <div x-show="active === 'paste'" style="display: none;" x-transition class="w-full">
+                        <form method="POST" action="{{ route('generate.text') }}">
+                            @csrf
+                            <div class="flex items-center space-x-3 mb-3 pl-2">
+                                <label class="text-sm font-semibold text-slate-600">Flashcard Count (Max 10):</label>
+                                <input type="number" name="count" min="1" max="10" value="10" class="w-20 p-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400">
+                            </div>
+                            <textarea name="text" rows="6" placeholder="Paste your notes, article, or any text here..." required class="w-full p-5 bg-white border border-gray-200 rounded-3xl text-base shadow-sm focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-400 placeholder:text-gray-300 resize-none">{{ old('text') }}</textarea>
+                            <div class="flex justify-end mt-2">
+                                <button type="submit" class="px-6 py-2.5 bg-indigo-500 text-white rounded-full font-semibold hover:bg-indigo-600 transition-colors shadow-md shadow-indigo-200">
+                                    Generate Flashcards ✨
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    {{-- PDF Panel --}}
+                    <div x-show="active === 'pdf'" style="display: none;" x-transition class="w-full">
+                        <form method="POST" action="{{ route('generate.pdf') }}" enctype="multipart/form-data">
+                            @csrf
+                            <div class="flex items-center space-x-3 mb-3 pl-2">
+                                <label class="text-sm font-semibold text-slate-600">Flashcard Count (Max 10):</label>
+                                <input type="number" name="count" min="1" max="10" value="10" class="w-20 p-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400">
+                            </div>
+                            <label class="flex flex-col items-center justify-center w-full h-36 bg-white border-2 border-dashed border-gray-200 rounded-3xl cursor-pointer hover:border-indigo-400 hover:bg-indigo-50/30 transition-all">
+                                <span class="text-3xl mb-2">📄</span>
+                                <span class="text-slate-500 text-sm font-medium">Click to upload a PDF</span>
+                                <span class="text-slate-300 text-xs mt-1">Max 10MB</span>
+                                <input type="file" name="pdf" accept=".pdf" class="hidden" required>
+                            </label>
+                            <div class="flex justify-end mt-2">
+                                <button type="submit" class="px-6 py-2.5 bg-indigo-500 text-white rounded-full font-semibold hover:bg-indigo-600 transition-colors shadow-md shadow-indigo-200">
+                                    Generate from PDF ✨
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div> {{-- end x-data --}}
 
                 <div class="w-full max-w-2xl">
                     <div class="flex justify-between items-center mb-6">
