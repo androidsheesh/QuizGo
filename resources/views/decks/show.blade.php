@@ -6,6 +6,17 @@
             <x-dropdown-profile/>
 
             <div class="max-w-4xl mx-auto w-full flex flex-col">
+                @php
+                    $accentColors = [
+                        ['stripe' => 'from-emerald-400 to-teal-400',  'dot' => '#6ee7b7', 'bar' => 'from-emerald-400 to-teal-400',  'label' => 'text-emerald-500', 'icon' => 'text-emerald-500'],
+                        ['stripe' => 'from-violet-400 to-purple-500', 'dot' => '#c4b5fd', 'bar' => 'from-violet-400 to-purple-500', 'label' => 'text-violet-500',  'icon' => 'text-violet-500'],
+                        ['stripe' => 'from-amber-400 to-orange-400',  'dot' => '#fcd34d', 'bar' => 'from-amber-400 to-orange-400',  'label' => 'text-amber-500',   'icon' => 'text-amber-500'],
+                        ['stripe' => 'from-sky-400 to-blue-500',      'dot' => '#93c5fd', 'bar' => 'from-sky-400 to-blue-500',      'label' => 'text-sky-500',     'icon' => 'text-sky-500'],
+                        ['stripe' => 'from-rose-400 to-pink-500',     'dot' => '#fca5a5', 'bar' => 'from-rose-400 to-pink-500',     'label' => 'text-rose-500',    'icon' => 'text-rose-500'],
+                        ['stripe' => 'from-cyan-400 to-emerald-400',  'dot' => '#67e8f9', 'bar' => 'from-cyan-400 to-emerald-400',  'label' => 'text-cyan-500',    'icon' => 'text-cyan-500'],
+                    ];
+                    $accent = $accentColors[$deck->id % count($accentColors)];
+                @endphp
                 {{-- Header Section --}}
                 <div class="flex flex-col md:flex-row md:items-center justify-between mb-10 gap-4">
                     <div class="flex items-center space-x-4">
@@ -196,12 +207,17 @@
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                         @forelse($deck->flashcards as $card)
-                            <div class="group flex flex-col bg-white border border-gray-100 rounded-[2rem] overflow-hidden shadow-sm hover:shadow-xl hover:shadow-emerald-100/50 transition-all duration-300 relative transform hover:-translate-y-1 aspect-[3/4] min-h-[300px]">
-                                <div class="h-2 w-full bg-emerald-400 transition-colors"></div>
-                                <div class="flex-1 p-6 relative flex flex-col justify-between">
+                            <div class="group flex flex-col bg-white border border-gray-100 rounded-[2rem] overflow-hidden shadow-sm hover:shadow-xl hover:shadow-emerald-100/50 transition-all duration-300 relative transform hover:-translate-y-1"
+                                 style="height:320px; background-image:radial-gradient(circle,{{ $accent['dot'] }}33 1px,transparent 1px); background-size:18px 18px;">
+
+                                {{-- Top colour bar — matches the deck's accent colour --}}
+                                <div class="h-2 w-full shrink-0 bg-gradient-to-r {{ $accent['bar'] }}"></div>
+
+                                {{-- Card body fills the remaining fixed height --}}
+                                <div class="flex-1 p-6 relative flex flex-col overflow-hidden">
 
                                     {{-- Action Buttons (Top Right) --}}
-                                    <div class="absolute right-3 top-3 flex items-center gap-1">
+                                    <div class="absolute right-3 top-3 flex items-center gap-1 z-10">
 
                                         {{-- Edit Button --}}
                                         <button
@@ -268,13 +284,16 @@
                                         </form>
                                     </div>
 
-                                    <div class="mb-6 pr-6">
-                                        <p class="text-[10px] font-bold text-emerald-400 uppercase tracking-widest mb-2">Question</p>
-                                        <p class="text-slate-800 font-bold leading-relaxed line-clamp-3">{{ $card->question }}</p>
+                                    {{-- Question — takes remaining space, clamps at 4 lines --}}
+                                    <div class="flex-1 overflow-hidden pr-6 mb-3">
+                                        <p class="text-[10px] font-bold {{ $accent['label'] }} uppercase tracking-widest mb-2">Question</p>
+                                        <p class="text-slate-800 font-bold leading-relaxed line-clamp-4">{{ $card->question }}</p>
                                     </div>
-                                    <div class="mt-auto pt-4 border-t border-slate-50">
-                                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Answer</p>
-                                        <p class="text-slate-600 text-sm leading-relaxed line-clamp-4">{{ $card->answer }}</p>
+
+                                    {{-- Answer — fixed height zone, always the same size --}}
+                                    <div class="shrink-0 pt-4 border-t border-slate-100" style="height: 96px; overflow: hidden;">
+                                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Answer</p>
+                                        <p class="text-slate-600 text-sm leading-relaxed line-clamp-3">{{ $card->answer }}</p>
                                     </div>
 
                                 </div>
