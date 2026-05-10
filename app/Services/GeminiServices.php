@@ -8,7 +8,7 @@ use Gemini\Exceptions\ErrorException;
 use Gemini\Exceptions\TransporterException;
 use Gemini\Laravel\Facades\Gemini;
 use RuntimeException;
-use Smalot\PdfParser\Parser as PdfParser;
+use thiagoalessio\TesseractOCR\TesseractOCR;
 use Throwable;
 
 class GeminiServices
@@ -87,7 +87,7 @@ class GeminiServices
 
     private function normalizeCount(int $count): int
     {
-        return max(1, min($count, 10));
+        return max(1, min($count, 20));
     }
 
     private function trimSourceText(string $text): string
@@ -97,15 +97,62 @@ class GeminiServices
 
     private function extractPdfText(string $pdfPath): string
     {
-        $parser = new PdfParser;
-        $pdf = $parser->parseFile($pdfPath);
-        $text = trim($pdf->getText());
-
-        if (strlen($text) < 50) {
-            throw new RuntimeException('Could not extract readable text from this PDF.');
+        // Create a temporary directory for the rasterized page images
+        $tmpDir = sys_get_temp_dir().'/quizgo_ocr_'.uniqid();
+        if (!mkdir($tmpDir, 0700, true)) {
+            throw new RuntimeException('Could not create temporary directory for OCR processing.');
         }
 
-        return $text;
+        try {
+            // Convert every PDF page to PNG images using pdftoppm (from poppler-utils)
+            $prefix = $tmpDir.'/page';
+            $cmd = sprintf(
+                'pdftoppm -png -r 200 %s %s 2>&1',
+                escapeshellarg($pdfPath),
+                escapeshellarg($prefix)
+            );
+            exec($cmd, $output, $returnCode);
+
+            if ($returnCode !== 0) {
+                throw new RuntimeException('Failed to convert PDF to images: '.implode(' ', $output));
+            }
+
+            // Gather all generated page images (pdftoppm names them page-1.png, page-2.png, …)
+            $images = glob($tmpDir.'/page-*.png');
+            if (empty($images)) {
+                // Fallback: some versions omit the dash
+                $images = glob($tmpDir.'/page*.png');
+            }
+            sort($images);
+
+            if (empty($images)) {
+                throw new RuntimeException('No page images were produced from the PDF.');
+            }
+
+            // Run Tesseract OCR on each page image and concatenate the text
+            $fullText = '';
+            foreach ($images as $imagePath) {
+                $pageText = (new TesseractOCR($imagePath))
+                    ->lang('eng')
+                    ->run();
+                $fullText .= "\n".$pageText;
+            }
+
+            $fullText = trim($fullText);
+
+            if (strlen($fullText) < 50) {
+                throw new RuntimeException('Could not extract readable text from this PDF. The file may be empty or protected.');
+            }
+
+            return $fullText;
+        } finally {
+            // Clean up all temporary image files
+            $files = glob($tmpDir.'/*');
+            if ($files) {
+                array_map('unlink', $files);
+            }
+            @rmdir($tmpDir);
+        }
     }
 
     public function generateFlashcardsFromTopic(string $topic, int $count = 10): array
