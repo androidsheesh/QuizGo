@@ -50,10 +50,11 @@
                 {{-- Answer Options --}}
                 <div class="grid grid-cols-1 gap-2.5">
                     <template x-for="(option, index) in currentOptions" :key="index">
-                        <button @click="selectAnswer(option)"
+                        <button @click="if(!answered) selected = option"
                             :disabled="answered"
                             :class="{
-                                'border-gray-100 bg-white hover:border-violet-300 hover:bg-violet-50/50 hover:-translate-y-0.5': !answered,
+                                'border-violet-400 bg-violet-50 ring-2 ring-violet-400/30': !answered && selected === option,
+                                'border-gray-100 bg-white hover:border-violet-300 hover:bg-violet-50/50 hover:-translate-y-0.5': !answered && selected !== option,
                                 'border-emerald-400 bg-emerald-50 ring-2 ring-emerald-400/30': answered && option === cards[current]?.answer,
                                 'border-red-400 bg-red-50 ring-2 ring-red-400/30': answered && selected === option && option !== cards[current]?.answer,
                                 'border-gray-100 bg-white opacity-50': answered && option !== cards[current]?.answer && selected !== option,
@@ -62,7 +63,8 @@
                             class="w-full flex items-center gap-4 p-4 rounded-2xl border-2 transition-all duration-200 text-left">
                             <div class="w-9 h-9 rounded-xl flex items-center justify-center text-sm font-bold shrink-0"
                                 :class="{
-                                    'bg-slate-100 text-slate-500': !answered,
+                                    'bg-violet-400 text-white': !answered && selected === option,
+                                    'bg-slate-100 text-slate-500': !answered && selected !== option,
                                     'bg-emerald-400 text-white': answered && option === cards[current]?.answer,
                                     'bg-red-400 text-white': answered && selected === option && option !== cards[current]?.answer,
                                     'bg-slate-100 text-slate-300': answered && option !== cards[current]?.answer && selected !== option
@@ -82,9 +84,16 @@
                     </template>
                 </div>
 
-                {{-- Next Button --}}
-                <div x-show="answered" class="mt-4 flex justify-center">
-                    <button @click="nextQuestion()"
+                {{-- Action Buttons --}}
+                <div class="mt-4 flex justify-center gap-3">
+                    {{-- Submit Answer Button --}}
+                    <button x-show="!answered && selected !== null" @click="submitAnswer()"
+                        class="px-8 py-3 bg-violet-500 text-white font-bold rounded-2xl hover:bg-violet-600 transition-colors shadow-lg shadow-violet-200">
+                        Submit Answer
+                    </button>
+
+                    {{-- Next Button --}}
+                    <button x-show="answered" @click="nextQuestion()"
                         class="px-8 py-3 bg-slate-900 text-white font-bold rounded-2xl hover:bg-slate-800 transition-colors shadow-lg shadow-slate-200">
                         <span x-text="current < cards.length - 1 ? 'Next Question →' : 'See Results →'"></span>
                     </button>
@@ -166,11 +175,10 @@
                     this.currentOptions = [correct, ...wrongs].sort(() => Math.random() - 0.5);
                 },
 
-                selectAnswer(option) {
-                    if (this.answered) return;
-                    this.selected = option;
+                submitAnswer() {
+                    if (this.answered || this.selected === null) return;
                     this.answered = true;
-                    if (option === this.cards[this.current].answer) {
+                    if (this.selected === this.cards[this.current].answer) {
                         this.score++;
                     }
                 },
