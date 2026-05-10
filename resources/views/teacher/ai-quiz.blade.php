@@ -47,8 +47,8 @@
                         <form method="POST" action="{{ route('teacher.quiz.ai.topic') }}">
                             @csrf
                             <div class="flex items-center space-x-3 mb-3 pl-2">
-                                <label class="text-sm font-semibold text-slate-600">Question Count (Max 10):</label>
-                                <input type="number" name="count" min="1" max="10" value="10" class="w-20 p-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-400">
+                                <label class="text-sm font-semibold text-slate-600">Question Count (Max 20):</label>
+                                <input type="number" name="count" min="1" max="20" value="10" class="w-20 p-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-400">
                             </div>
                             <div class="relative">
                                 <input type="text" name="topic" placeholder="Generate a quiz about..." value="{{ old('topic') }}" required class="w-full p-6 pr-16 bg-white border border-gray-200 rounded-[2rem] text-xl shadow-sm focus:outline-none focus:ring-4 focus:ring-violet-500/10 focus:border-violet-400 transition-all placeholder:text-gray-300">
@@ -64,8 +64,8 @@
                         <form method="POST" action="{{ route('teacher.quiz.ai.text') }}">
                             @csrf
                             <div class="flex items-center space-x-3 mb-3 pl-2">
-                                <label class="text-sm font-semibold text-slate-600">Question Count (Max 10):</label>
-                                <input type="number" name="count" min="1" max="10" value="10" class="w-20 p-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-400">
+                                <label class="text-sm font-semibold text-slate-600">Question Count (Max 20):</label>
+                                <input type="number" name="count" min="1" max="20" value="10" class="w-20 p-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-400">
                             </div>
                             <textarea name="text" rows="6" placeholder="Paste lesson notes, article, or any text here..." required class="w-full p-5 bg-white border border-gray-200 rounded-3xl text-base shadow-sm focus:outline-none focus:ring-4 focus:ring-violet-500/10 focus:border-violet-400 placeholder:text-gray-300 resize-none">{{ old('text') }}</textarea>
                             <div class="flex justify-end mt-2">
@@ -81,15 +81,34 @@
                         <form method="POST" action="{{ route('teacher.quiz.ai.pdf') }}" enctype="multipart/form-data">
                             @csrf
                             <div class="flex items-center space-x-3 mb-3 pl-2">
-                                <label class="text-sm font-semibold text-slate-600">Question Count (Max 10):</label>
-                                <input type="number" name="count" min="1" max="10" value="10" class="w-20 p-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-400">
+                                <label class="text-sm font-semibold text-slate-600">Question Count (Max 20):</label>
+                                <input type="number" name="count" min="1" max="20" value="10" class="w-20 p-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-400">
                             </div>
-                            <label class="flex flex-col items-center justify-center w-full h-36 bg-white border-2 border-dashed border-gray-200 rounded-3xl cursor-pointer hover:border-violet-400 hover:bg-violet-50/30 transition-all">
-                                <span class="text-3xl mb-2">📄</span>
-                                <span class="text-slate-500 text-sm font-medium">Click to upload a lesson PDF</span>
-                                <span class="text-slate-300 text-xs mt-1">Max 10MB</span>
-                                <input type="file" name="pdf" accept=".pdf" class="hidden" required>
-                            </label>
+                            <div x-data="{ fileName: '' }">
+                                <label
+                                    class="flex flex-col items-center justify-center w-full h-36 bg-white border-2 border-dashed rounded-3xl cursor-pointer transition-all"
+                                    :class="fileName ? 'border-violet-400 bg-violet-50/40' : 'border-gray-200 hover:border-violet-400 hover:bg-violet-50/30'"
+                                >
+                                    <template x-if="!fileName">
+                                        <div class="flex flex-col items-center">
+                                            <span class="text-3xl mb-2">📄</span>
+                                            <span class="text-slate-500 text-sm font-medium">Click to upload a lesson PDF</span>
+                                            <span class="text-slate-300 text-xs mt-1">Max 10MB</span>
+                                        </div>
+                                    </template>
+                                    <template x-if="fileName">
+                                        <div class="flex flex-col items-center gap-1 px-4 text-center">
+                                            <span class="text-3xl">✅</span>
+                                            <span class="text-violet-600 text-sm font-semibold mt-1 break-all" x-text="fileName"></span>
+                                            <span class="text-slate-400 text-xs">Click to change file</span>
+                                        </div>
+                                    </template>
+                                    <input
+                                        type="file" name="pdf" accept=".pdf" class="hidden" required
+                                        @change="fileName = $event.target.files[0] ? $event.target.files[0].name : ''"
+                                    >
+                                </label>
+                            </div>
                             <div class="flex justify-end mt-2">
                                 <button type="submit" class="px-6 py-2.5 bg-violet-500 text-white rounded-full font-semibold hover:bg-violet-600 transition-colors shadow-md shadow-violet-200">
                                     Generate from PDF ✨
