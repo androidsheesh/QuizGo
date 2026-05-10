@@ -30,7 +30,7 @@ class HomeController extends Controller
     {
         $request->validate([
             'topic' => 'required|string|max:255',
-            'count' => 'nullable|integer|min:1|max:10',
+            'count' => 'nullable|integer|min:1|max:20',
         ]);
 
         try {
@@ -59,8 +59,8 @@ class HomeController extends Controller
     public function generateFromPdf(Request $request, GeminiServices $gemini)
     {
         $request->validate([
-            'pdf' => 'required|file|mimes:pdf|max:10240',
-            'count' => 'nullable|integer|min:1|max:10',
+            'pdf' => 'required|file|mimes:pdf|max:10000',
+            'count' => 'nullable|integer|min:1|max:20',
         ]);
 
         try {
@@ -91,7 +91,7 @@ class HomeController extends Controller
     {
         $request->validate([
             'text' => 'required|string|min:20',
-            'count' => 'nullable|integer|min:1|max:10',
+            'count' => 'nullable|integer|min:1|max:20',
         ]);
 
         try {
