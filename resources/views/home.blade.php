@@ -49,8 +49,8 @@
                         <form method="POST" action="{{ route('generate.topic') }}">
                             @csrf
                             <div class="flex items-center space-x-3 mb-3 pl-2">
-                                <label class="text-sm font-semibold text-slate-600">Flashcard Count (Max 10):</label>
-                                <input type="number" name="count" min="1" max="10" value="10" class="w-20 p-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400">
+                                <label class="text-sm font-semibold text-slate-600">Flashcard Count (Max 20):</label>
+                                <input type="number" name="count" min="1" max="20" value="10" class="w-20 p-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400">
                             </div>
                             <div class="relative">
                                 <input type="text" name="topic" placeholder="I want to study..." value="{{ old('topic') }}" required class="w-full p-6 pr-16 bg-white border border-gray-200 rounded-[2rem] text-xl shadow-sm focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-400 transition-all placeholder:text-gray-300">
@@ -66,8 +66,8 @@
                         <form method="POST" action="{{ route('generate.text') }}">
                             @csrf
                             <div class="flex items-center space-x-3 mb-3 pl-2">
-                                <label class="text-sm font-semibold text-slate-600">Flashcard Count (Max 10):</label>
-                                <input type="number" name="count" min="1" max="10" value="10" class="w-20 p-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400">
+                                <label class="text-sm font-semibold text-slate-600">Flashcard Count (Max 20):</label>
+                                <input type="number" name="count" min="1" max="20" value="10" class="w-20 p-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400">
                             </div>
                             <textarea name="text" rows="6" placeholder="Paste your notes, article, or any text here..." required class="w-full p-5 bg-white border border-gray-200 rounded-3xl text-base shadow-sm focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-400 placeholder:text-gray-300 resize-none">{{ old('text') }}</textarea>
                             <div class="flex justify-end mt-2">
@@ -83,15 +83,34 @@
                         <form method="POST" action="{{ route('generate.pdf') }}" enctype="multipart/form-data">
                             @csrf
                             <div class="flex items-center space-x-3 mb-3 pl-2">
-                                <label class="text-sm font-semibold text-slate-600">Flashcard Count (Max 10):</label>
-                                <input type="number" name="count" min="1" max="10" value="10" class="w-20 p-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400">
+                                <label class="text-sm font-semibold text-slate-600">Flashcard Count (Max 20):</label>
+                                <input type="number" name="count" min="1" max="20" value="10" class="w-20 p-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400">
                             </div>
-                            <label class="flex flex-col items-center justify-center w-full h-36 bg-white border-2 border-dashed border-gray-200 rounded-3xl cursor-pointer hover:border-indigo-400 hover:bg-indigo-50/30 transition-all">
-                                <span class="text-3xl mb-2">📄</span>
-                                <span class="text-slate-500 text-sm font-medium">Click to upload a PDF</span>
-                                <span class="text-slate-300 text-xs mt-1">Max 10MB</span>
-                                <input type="file" name="pdf" accept=".pdf" class="hidden" required>
-                            </label>
+                            <div x-data="{ fileName: '' }">
+                                <label
+                                    class="flex flex-col items-center justify-center w-full h-36 bg-white border-2 border-dashed rounded-3xl cursor-pointer transition-all"
+                                    :class="fileName ? 'border-indigo-400 bg-indigo-50/40' : 'border-gray-200 hover:border-indigo-400 hover:bg-indigo-50/30'"
+                                >
+                                    <template x-if="!fileName">
+                                        <div class="flex flex-col items-center">
+                                            <span class="text-3xl mb-2">📄</span>
+                                            <span class="text-slate-500 text-sm font-medium">Click to upload a PDF</span>
+                                            <span class="text-slate-300 text-xs mt-1">Max 10MB</span>
+                                        </div>
+                                    </template>
+                                    <template x-if="fileName">
+                                        <div class="flex flex-col items-center gap-1 px-4 text-center">
+                                            <span class="text-3xl">✅</span>
+                                            <span class="text-indigo-600 text-sm font-semibold mt-1 break-all" x-text="fileName"></span>
+                                            <span class="text-slate-400 text-xs">Click to change file</span>
+                                        </div>
+                                    </template>
+                                    <input
+                                        type="file" name="pdf" accept=".pdf" class="hidden" required
+                                        @change="fileName = $event.target.files[0] ? $event.target.files[0].name : ''"
+                                    >
+                                </label>
+                            </div>
                             <div class="flex justify-end mt-2">
                                 <button type="submit" class="px-6 py-2.5 bg-indigo-500 text-white rounded-full font-semibold hover:bg-indigo-600 transition-colors shadow-md shadow-indigo-200">
                                     Generate from PDF ✨
