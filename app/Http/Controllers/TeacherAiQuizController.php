@@ -45,7 +45,7 @@ class TeacherAiQuizController extends Controller
             'files' => 'nullable|array',
             'files.*' => 'nullable|file|mimes:pdf,txt|max:10240',
             'content' => 'nullable|string',
-            'count' => 'nullable|integer|min:1|max:10',
+            'count' => 'nullable|integer|min:1|max:20',
         ]);
 
         try {
@@ -77,7 +77,7 @@ class TeacherAiQuizController extends Controller
     {
         $request->validate([
             'topic' => 'required|string|max:255',
-            'count' => 'nullable|integer|min:1|max:10',
+            'count' => 'nullable|integer|min:1|max:20',
         ]);
 
         try {
@@ -95,7 +95,7 @@ class TeacherAiQuizController extends Controller
     {
         $request->validate([
             'text' => 'required|string',
-            'count' => 'nullable|integer|min:1|max:10',
+            'count' => 'nullable|integer|min:1|max:20',
         ]);
 
         try {
@@ -115,7 +115,7 @@ class TeacherAiQuizController extends Controller
     {
         $request->validate([
             'pdf' => 'required|file|mimes:pdf|max:10240',
-            'count' => 'nullable|integer|min:1|max:10',
+            'count' => 'nullable|integer|min:1|max:20',
         ]);
 
         try {
