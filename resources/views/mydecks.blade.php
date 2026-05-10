@@ -67,36 +67,52 @@
                         <p class="text-slate-400 mt-2">Create your first deck to start studying!</p>
                     </div>
                 @else
+                @php
+                    $accentColors = [
+                        ['stripe' => 'from-emerald-400 to-teal-400',    'dot' => '#6ee7b7', 'icon' => 'text-emerald-300'],
+                        ['stripe' => 'from-violet-400 to-purple-500',   'dot' => '#c4b5fd', 'icon' => 'text-violet-300'],
+                        ['stripe' => 'from-amber-400 to-orange-400',    'dot' => '#fcd34d', 'icon' => 'text-amber-300'],
+                        ['stripe' => 'from-sky-400 to-blue-500',        'dot' => '#93c5fd', 'icon' => 'text-sky-300'],
+                        ['stripe' => 'from-rose-400 to-pink-500',       'dot' => '#fca5a5', 'icon' => 'text-rose-300'],
+                        ['stripe' => 'from-cyan-400 to-emerald-400',    'dot' => '#67e8f9', 'icon' => 'text-cyan-300'],
+                    ];
+                @endphp
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                     @foreach($decks as $deck)
-                        <div class="group relative flex bg-white border border-gray-100 rounded-[2rem] overflow-hidden shadow-sm hover:shadow-xl hover:shadow-slate-200/50 transition-all duration-300 transform hover:-translate-y-1"
+                        @php $accent = $accentColors[$deck->id % count($accentColors)]; @endphp
+                        <div class="group relative flex items-stretch bg-white border border-gray-100 rounded-[2rem] overflow-hidden shadow-sm hover:shadow-xl hover:shadow-slate-200/50 transition-all duration-300 transform hover:-translate-y-1"
                             x-data="{ editing: false, title: '{{ addslashes($deck->title) }}', original: '{{ addslashes($deck->title) }}' }">
 
-                            <div class="w-3 bg-emerald-400"></div>
+                            {{-- Left colour stripe — gradient, always full height --}}
+                            <div class="w-4 shrink-0 bg-gradient-to-b {{ $accent['stripe'] }}"></div>
 
-                            <div class="flex-1 p-8">
-                                <div class="flex justify-between items-start mb-4">
+                            {{-- Card body with subtle dot-grid pattern --}}
+                            <div class="flex-1 min-w-0 p-8 relative"
+                                style="background-image: radial-gradient(circle, {{ $accent['dot'] }}55 1px, transparent 1px); background-size: 22px 22px;">
 
-                                    {{-- Title row --}}
+                                <div class="flex items-start gap-2 mb-4">
+
+                                    {{-- Title area — min-w-0 lets it shrink and truncate --}}
                                     <div class="flex-1 min-w-0">
 
                                         {{-- VIEW MODE --}}
-                                        <a x-show="!editing" href="{{ route('decks.show', $deck) }}" class="block">
-                                            <h4 class="text-xl font-bold text-slate-800 group-hover:text-emerald-600 transition-colors truncate" x-text="title"></h4>
+                                        <a x-show="!editing" href="{{ route('decks.show', $deck) }}" class="block min-w-0">
+                                            <h4 class="text-xl font-bold text-slate-800 group-hover:text-emerald-600 transition-colors truncate"
+                                                x-text="title"
+                                                title="{{ $deck->title }}"></h4>
                                         </a>
 
-                                        {{-- EDIT MODE — click outside cancels --}}
+                                        {{-- EDIT MODE --}}
                                         <form x-show="editing" style="display:none;"
                                             action="{{ route('decks.update', $deck) }}" method="POST"
                                             @click.away="editing = false; title = original"
-                                            class="flex items-center gap-2 pr-2">
+                                            class="flex items-center gap-2">
                                             @csrf
                                             @method('PUT')
                                             <input type="text" name="title" x-model="title"
                                                 x-effect="if (editing) $nextTick(() => $el.focus())"
                                                 @keydown.escape="editing = false; title = original"
-                                                class="w-full px-3 py-1.5 text-base font-bold text-slate-700 bg-slate-50 border border-emerald-300 rounded-lg focus:outline-none focus:border-emerald-500 transition">
-                                            {{-- ✔ Save --}}
+                                                class="min-w-0 w-full px-3 py-1.5 text-base font-bold text-slate-700 bg-slate-50 border border-emerald-300 rounded-lg focus:outline-none focus:border-emerald-500 transition">
                                             <button type="submit"
                                                     class="shrink-0 p-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg transition"
                                                     title="Save">
@@ -109,8 +125,8 @@
                                         <p class="text-slate-400 font-medium text-sm mt-1">{{ $deck->flashcards_count }} cards</p>
                                     </div>
 
-                                    {{-- Action buttons --}}
-                                    <div class="flex items-center gap-1 ml-2 shrink-0">
+                                    {{-- Action buttons — shrink-0 keeps them fixed, never pushed --}}
+                                    <div class="flex items-center gap-1 shrink-0">
                                         {{-- ✏️ Edit --}}
                                         <button @click="editing = true"
                                                 class="opacity-0 group-hover:opacity-100 p-2 text-slate-300 hover:text-slate-600 hover:bg-slate-50 rounded-lg transition-all"
@@ -137,8 +153,8 @@
 
                                 </div>
 
-                                <div class="w-full h-1.5 bg-slate-50 rounded-full mt-6 overflow-hidden">
-                                    <div class="h-full bg-slate-200 rounded-full" style="width: {{ min(100, max(5, $deck->flashcards_count * 5)) }}%"></div>
+                                <div class="w-full h-1.5 bg-slate-100 rounded-full mt-6 overflow-hidden">
+                                    <div class="h-full rounded-full bg-gradient-to-r {{ $accent['stripe'] }}" style="width: {{ min(100, max(5, $deck->flashcards_count * 5)) }}%"></div>
                                 </div>
                             </div>
                         </div>
