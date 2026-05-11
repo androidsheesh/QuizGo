@@ -16,63 +16,78 @@ use App\Http\Controllers\TeacherdashboardController;
 use App\Http\Controllers\TeacherprofileController;
 use App\Http\Controllers\TeacherQuizController;
 use App\Http\Controllers\WelcomeController;
+use App\Http\Controllers\TeacherSigninController;
+use App\Http\Controllers\AdminController;
 use Illuminate\Support\Facades\Route;
 
+// ─── Public Routes (no auth) ───
 Route::get('/', [WelcomeController::class, 'show'])->name('welcome');
-Route::get('/home', [HomeController::class, 'show'])->name('home'); // show the dashboard page
 
-Route::middleware('auth')->group(function () {
+Route::get('/signup', [SignupController::class, 'create']);
+Route::post('/signup', [SignupController::class, 'store'])->middleware('throttle:3,1');
+
+Route::get('/signin', [SigninController::class, 'create']);
+Route::post('/signin', [SigninController::class, 'store']);
+
+Route::get('/teacher/signin', [TeacherSigninController::class, 'create'])->name('teacher.signin');
+Route::post('/teacher/signin', [TeacherSigninController::class, 'store'])->name('teacher.signin.store');
+
+// ─── Student Routes ───
+Route::middleware(['auth', 'prevent-back'])->group(function () {
+
+    Route::get('/home', [HomeController::class, 'show'])->name('home');
+
     Route::post('/generate/topic', [HomeController::class, 'generateFromTopic'])->name('generate.topic');
     Route::post('/generate/text', [HomeController::class, 'generateFromText'])->name('generate.text');
     Route::post('/generate/pdf', [HomeController::class, 'generateFromPdf'])->name('generate.pdf');
-});
-Route::get('/signup', [SignupController::class, 'create']); // show the form of sign up
-Route::post('/signup', [SignupController::class, 'store']); // Process the form submission of signup
-Route::get('/signin', [SigninController::class, 'create']); // show the form of sign in
-Route::post('/signin', [SigninController::class, 'store']); // Process the form submission of signin
 
-Route::middleware('auth')->group(function () {
+    // Decks
     Route::get('/mydecks', [DeckController::class, 'index'])->name('mydecks');
     Route::post('/decks', [DeckController::class, 'store'])->name('decks.store');
     Route::get('/decks/{deck}', [DeckController::class, 'show'])->name('decks.show');
     Route::put('/decks/{deck}', [DeckController::class, 'update'])->name('decks.update');
     Route::delete('/decks/{deck}', [DeckController::class, 'destroy'])->name('decks.destroy');
 
+    // Flashcards
     Route::post('/decks/{deck}/flashcards', [FlashcardController::class, 'store'])->name('flashcards.store');
     Route::delete('/flashcards/{flashcard}', [FlashcardController::class, 'destroy'])->name('flashcards.destroy');
     Route::put('/flashcards/{flashcard}', [FlashcardController::class, 'update'])->name('flashcards.update');
 
-    // Study mode routes
+    // Study mode
     Route::get('/decks/{deck}/study/flipcards', [StudyController::class, 'flipcards'])->name('study.flipcards');
     Route::get('/decks/{deck}/study/multiplechoice', [StudyController::class, 'multiplechoice'])->name('study.multiplechoice');
     Route::get('/decks/{deck}/study/identification', [StudyController::class, 'identification'])->name('study.identification');
 
-    // Profile routes
+    // Profile
     Route::get('/myprofile', [MyProfileController::class, 'show'])->name('myprofile');
     Route::put('/myprofile', [MyProfileController::class, 'update'])->name('myprofile.update');
+    Route::put('/myprofile/password', [MyProfileController::class, 'updatePassword'])->name('myprofile.password');
     Route::delete('/myprofile', [MyProfileController::class, 'destroy'])->name('myprofile.destroy');
 
-    // Student Assignments & Classrooms
+    // Classrooms
     Route::get('/assignments', [StudentClassroomController::class, 'index'])->name('student.assignments');
     Route::get('/classroom/{classroom}', [StudentClassroomController::class, 'show'])->name('student.classroom.show');
+    Route::post('/classroom/join', [StudentClassroomController::class, 'join'])->name('classroom.join');
 
-    // Student Quiz Taking
+    // Quizzes
     Route::get('/quiz/{assignment}/take', [StudentQuizController::class, 'take'])->name('student.quiz.take');
     Route::post('/quiz/{assignment}/submit', [StudentQuizController::class, 'submit'])->name('student.quiz.submit');
     Route::get('/quiz/results/{attempt}', [StudentQuizController::class, 'results'])->name('student.quiz.results');
-
-    // Student join classroom via code
-    Route::post('/classroom/join', [StudentClassroomController::class, 'join'])->name('classroom.join');
 });
 
-// ─── Teacher Routes (auth + teacher middleware) ───
+// ─── Admin Routes ───
+Route::middleware(['auth', 'prevent-back'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/', [AdminController::class, 'dashboard'])->name('dashboard');
+    Route::post('/teachers', [AdminController::class, 'storeTeacher'])->name('teachers.store');
+    Route::delete('/teachers/{teacher}', [AdminController::class, 'deleteTeacher'])->name('teachers.destroy');
+});
 
-Route::middleware('auth')->group(function () {
+// ─── Teacher Routes ───
+Route::middleware(['auth', 'prevent-back'])->group(function () {
     Route::get('/teacher-dashboard', [TeacherdashboardController::class, 'show'])->name('teacher.dashboard');
-
 });
 
-Route::middleware(['auth', 'teacher'])->prefix('teacher')->name('teacher.')->group(function () {
+Route::middleware(['auth', 'teacher', 'prevent-back'])->prefix('teacher')->name('teacher.')->group(function () {
 
     // Classrooms
     Route::post('/classrooms', [TeacherClassroomController::class, 'store'])->name('classroom.store');
@@ -88,8 +103,7 @@ Route::middleware(['auth', 'teacher'])->prefix('teacher')->name('teacher.')->gro
     Route::post('/quizzes/assign', [TeacherQuizController::class, 'assign'])->name('quiz.assign');
     Route::delete('/quizzes/assignments/{assignment}', [TeacherQuizController::class, 'unassign'])->name('quiz.unassign');
 
-    // AI Quiz
-    // Keep specific AI routes before the /quizzes/{quiz} wildcard route.
+    // AI Quiz (keep before wildcard {quiz})
     Route::get('/quizzes/ai', [TeacherAiQuizController::class, 'showUpload'])->name('quiz.ai');
     Route::post('/quizzes/ai', [TeacherAiQuizController::class, 'generate'])->name('quiz.ai.generate');
     Route::post('/quizzes/ai/topic', [TeacherAiQuizController::class, 'generateFromTopic'])->name('quiz.ai.topic');
@@ -102,13 +116,21 @@ Route::middleware(['auth', 'teacher'])->prefix('teacher')->name('teacher.')->gro
     // Profile
     Route::get('/profile', [TeacherprofileController::class, 'show'])->name('profile');
     Route::put('/profile', [TeacherprofileController::class, 'update'])->name('profile.update');
+    Route::put('/profile/password', [TeacherprofileController::class, 'updatePassword'])->name('profile.password');
     Route::delete('/profile', [TeacherprofileController::class, 'destroy'])->name('profile.destroy');
 });
 
-Route::middleware('auth')->group(function () {
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-});
+//acts as the "checker" that the frontend talks to while the user sees the loading screen.
+Route::get('/api/check-new-deck/{oldId}', function ($oldId) {
+    $newDeck = Auth::user()->decks()
+        ->where('id', '>', $oldId)
+        ->latest()
+        ->first();
+
+    return response()->json([
+        'is_ready' => (bool) $newDeck,
+        'deck_id' => $newDeck?->id
+    ]);
+})->middleware('auth');
 
 require __DIR__.'/auth.php';

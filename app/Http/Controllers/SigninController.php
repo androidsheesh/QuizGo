@@ -20,8 +20,10 @@ class SigninController extends Controller
         if (Auth::attempt($credentials)){
             $request->session()->regenerate();
 
-            if(Auth::user()->role ==='teacher'){
+            if(Auth::user()->role === 'teacher'){
                 return redirect()->route('teacher.dashboard');
+            } elseif(Auth::user()->role === 'admin') {
+                return redirect()->route('admin.dashboard');
             }
 
             return redirect('home');

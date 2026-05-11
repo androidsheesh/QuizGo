@@ -14,17 +14,22 @@ class TeacherQuizController extends Controller
     /**
      * List all quizzes for this teacher.
      */
-    public function index()
+    public function index(Request $request)
     {
         /** @var \App\Models\User $teacher */
         $teacher = Auth::user();
 
         // FIX: Changed find() to where()
-        $quizzes = Quiz::where('teacher_id', $teacher->id)
+        $query = Quiz::where('teacher_id', $teacher->id)
             ->withCount('questions')
             ->with(['assignments.classroom'])
-            ->latest()
-            ->get();
+            ->latest();
+
+        if ($request->has('search') && $request->search != '') {
+            $query->where('title', 'like', '%' . $request->search . '%');
+        }
+
+        $quizzes = $query->get();
 
         // FIX: Changed find() to where()
         $classrooms = Classroom::where('teacher_id', $teacher->id)->get();
@@ -40,12 +45,7 @@ class TeacherQuizController extends Controller
      */
     public function create()
     {
-        // FIX: Changed find() to where()
-        $classrooms = Classroom::where('teacher_id', Auth::id())->get();
-
-        return view('teacher.assign.quiz', [
-            'classrooms' => $classrooms,
-        ]);
+        return redirect()->route('teacher.quiz.index');
     }
 
     /**
@@ -104,11 +104,12 @@ class TeacherQuizController extends Controller
     public function show(Quiz $quiz)
     {
         $this->authorizeTeacher($quiz);
-
         $quiz->load(['questions', 'assignments.classroom', 'assignments.attempts.student']);
+        $classrooms = Classroom::where('teacher_id', Auth::id())->get();
 
         return view('teacher.quiz.show', [
-            'quiz' => $quiz,
+            'quiz'       => $quiz,
+            'classrooms' => $classrooms,
         ]);
     }
 

@@ -44,13 +44,35 @@
                 </div>
 
                 {{-- My Classes Grid --}}
-                <h3 class="text-xl font-bold text-slate-700 mb-6">My Classes</h3>
+                <div class="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
+                    <h3 class="text-xl font-bold text-slate-700">My Classes</h3>
 
+                    {{-- Search Bar --}}
+                    <form method="GET" action="{{ route('student.assignments') }}" class="flex w-full md:w-auto"
+                          x-data="{ query: '{{ request('search') }}', search() {
+                              let url = new URL('{{ route('student.assignments') }}');
+                              if (this.query) { url.searchParams.set('search', this.query); }
+                              fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                                  .then(res => res.text())
+                                  .then(html => {
+                                      let doc = new DOMParser().parseFromString(html, 'text/html');
+                                      document.getElementById('assignments-container').innerHTML = doc.getElementById('assignments-container').innerHTML;
+                                      window.history.pushState({}, '', url);
+                                  });
+                          } }" @submit.prevent="search">
+                        <input type="text" name="search" x-model="query" @input.debounce.500ms="search" placeholder="Search classes..." class="w-full md:w-64 p-2 bg-white border border-gray-200 rounded-xl text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-400/30 focus:border-emerald-300 transition-all shadow-sm">
+                        <button type="submit" class="ml-2 px-4 py-2 bg-slate-900 text-white font-bold rounded-xl shadow-sm hover:bg-slate-800 transition-colors">
+                            Search
+                        </button>
+                    </form>
+                </div>
+
+                <div id="assignments-container">
                 @if($classrooms->isEmpty())
                     <div class="text-center py-16 bg-white rounded-3xl border border-gray-100 shadow-sm">
                         <div class="text-5xl mb-4">🏫</div>
-                        <h4 class="text-lg font-bold text-slate-700">No classes yet</h4>
-                        <p class="text-slate-400 text-sm mt-2">You haven't joined any classes. Use a code to join one above!</p>
+                        <h4 class="text-lg font-bold text-slate-700">No classes found</h4>
+                        <p class="text-slate-400 text-sm mt-2">@if(request('search')) Try a different search term! @else You haven't joined any classes. Use a code to join one above! @endif</p>
                     </div>
                 @else
                     @php $colors = ['bg-emerald-400', 'bg-blue-400', 'bg-amber-400', 'bg-rose-400', 'bg-violet-400']; @endphp
@@ -128,6 +150,7 @@
                         @endif
                     </nav>
                 @endif
+                </div>
 
 
             </div>

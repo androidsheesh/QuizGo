@@ -35,6 +35,9 @@ class SignupController extends Controller
         // 3. Log the user in
         Auth::login($user);
 
+        // Redis-backed sessions to store a quick flash message
+        $request->session()->flash('status', 'Welcome to QuizGo, {$user->firstname}!');
+
         // after signing up, it will redirect directly to the dashboard page
         return redirect('home');
 

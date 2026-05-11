@@ -9,13 +9,18 @@ use Illuminate\Support\Facades\Auth;
 class DeckController extends Controller
 {
 
-    public function index()
+    public function index(Request $request)
     {
-        $decks = Auth::user()
+        $query = Auth::user()
             ->decks()
             ->withCount('flashcards')
-            ->latest()
-            ->paginate(9);
+            ->latest();
+
+        if ($request->has('search') && $request->search != '') {
+            $query->where('title', 'like', '%' . $request->search . '%');
+        }
+
+        $decks = $query->paginate(9)->appends(['search' => $request->search]);
 
         return view('mydecks', compact('decks'));
     }
@@ -33,16 +38,24 @@ class DeckController extends Controller
         return redirect()->route('mydecks')->with('success', 'Deck created successfully.');
     }
 
-    public function show(Deck $deck)
+    public function show(Request $request, Deck $deck)
     {
         // Ensure user owns the deck
         if ($deck->user_id !== Auth::id()) {
             abort(403, 'Unauthorized action.');
         }
 
-        $deck->load('flashcards');
+        $totalCards = $deck->flashcards()->count();
+        $flashcards = $deck->flashcards()->latest()->paginate(12);
 
-        return view('decks.show', compact('deck'));
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'html' => view('decks.partials.flashcards', compact('flashcards', 'deck'))->render(),
+                'next_page' => $flashcards->nextPageUrl()
+            ]);
+        }
+
+        return view('decks.show', compact('deck', 'flashcards', 'totalCards'));
     }
 
     public function update(Request $request, Deck $deck)

@@ -12,15 +12,29 @@ class StudentClassroomController extends Controller
     /**
      * Show all classrooms the student is enrolled in.
      */
-    public function index()
+    public function index(Request $request)
     {
         /** @var \App\Models\User $student */
         $student = Auth::user();
-        $classrooms = $student
-        ->enrolledClassrooms()
-        ->withCount('quizAssignments')
-        ->with('teacher')
-        ->paginate(6);
+        $query = $student
+            ->enrolledClassrooms()
+            ->withCount('quizAssignments')
+            ->with('teacher');
+
+        if ($request->has('search') && $request->search != '') {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', '%' . $search . '%')
+                  ->orWhere('code', 'like', '%' . $search . '%')
+                  ->orWhere('description', 'like', '%' . $search . '%')
+                  ->orWhereHas('teacher', function($q2) use ($search) {
+                      $q2->where('firstname', 'like', '%' . $search . '%')
+                         ->orWhere('lastname', 'like', '%' . $search . '%');
+                  });
+            });
+        }
+
+        $classrooms = $query->paginate(6)->appends(['search' => $request->search]);
 
         return view('student.assignments', [
             'classrooms' => $classrooms,

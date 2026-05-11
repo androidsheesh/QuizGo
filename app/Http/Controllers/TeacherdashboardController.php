@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Auth;
 
 class TeacherdashboardController extends Controller
 {
-    public function show()
+    public function show(Request $request)
     {
         /** @var \App\Models\User $teacher */
         $teacher = Auth::user();
@@ -31,11 +31,19 @@ class TeacherdashboardController extends Controller
             ->count();
 
         // Classrooms with student counts
-        $classrooms = Classroom::where('teacher_id', $teacher->id)
+        $classesQuery = Classroom::where('teacher_id', $teacher->id)
             ->withCount('students')
             ->with(['quizAssignments.quiz', 'quizAssignments.attempts'])
-            ->latest()
-            ->paginate(9, ['*'], 'classesPage');
+            ->latest();
+
+        if ($request->has('search_class') && $request->search_class != '') {
+            $classesQuery->where(function($q) use ($request) {
+                $q->where('name', 'like', '%' . $request->search_class . '%')
+                  ->orWhere('code', 'like', '%' . $request->search_class . '%');
+            });
+        }
+
+        $classrooms = $classesQuery->paginate(9, ['*'], 'classesPage')->appends(['search_class' => $request->search_class]);
 
         // Recent quizzes
         // FIX: Removed the duplicated 'teacher_id', $teacher->id arguments

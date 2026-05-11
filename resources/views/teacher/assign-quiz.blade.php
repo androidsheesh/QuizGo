@@ -33,12 +33,38 @@
 
                 {{-- TAB 1: My Quizzes --}}
                 <div x-show="tab==='quizzes'" x-transition>
+                    <div class="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
+                        <h3 class="text-xl font-bold text-slate-700">My Quizzes</h3>
+
+                        {{-- Search Bar --}}
+                        <form method="GET" action="{{ route('teacher.quiz.index') }}" class="flex w-full md:w-auto"
+                              x-data="{ query: '{{ request('search') }}', search() {
+                                  let url = new URL('{{ route('teacher.quiz.index') }}');
+                                  if (this.query) { url.searchParams.set('search', this.query); }
+                                  fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                                      .then(res => res.text())
+                                      .then(html => {
+                                          let doc = new DOMParser().parseFromString(html, 'text/html');
+                                          document.getElementById('assign-quiz-container').innerHTML = doc.getElementById('assign-quiz-container').innerHTML;
+                                          window.history.pushState({}, '', url);
+                                      });
+                              } }" @submit.prevent="search">
+                            <input type="text" name="search" x-model="query" @input.debounce.500ms="search" placeholder="Search quizzes..." class="w-full md:w-64 p-2 bg-white border border-gray-200 rounded-xl text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-400/30 focus:border-emerald-300 transition-all shadow-sm">
+                            <button type="submit" class="ml-2 px-4 py-2 bg-emerald-500 text-white font-bold rounded-xl shadow-sm hover:bg-emerald-600 transition-colors">
+                                Search
+                            </button>
+                        </form>
+                    </div>
+
+                    <div id="assign-quiz-container">
                     @if($quizzes->isEmpty())
                         <div class="text-center py-14 bg-white rounded-3xl border border-gray-100 shadow-sm">
                             <div class="text-4xl mb-3">📝</div>
-                            <h4 class="text-base font-bold text-slate-700">No quizzes yet</h4>
-                            <p class="text-slate-400 text-sm mt-1">Create your first quiz to get started!</p>
+                            <h4 class="text-base font-bold text-slate-700">No quizzes found</h4>
+                            <p class="text-slate-400 text-sm mt-1">@if(request('search')) Try a different search term! @else Create your first quiz to get started! @endif</p>
+                            @if(!request('search'))
                             <button @click="tab='create'" class="inline-block mt-5 px-6 py-2 bg-emerald-500 text-white text-sm font-semibold rounded-full hover:bg-emerald-600 transition-colors shadow-lg shadow-emerald-200">Create a Quiz</button>
+                            @endif
                         </div>
                     @else
                         @php $colors = ['bg-red-400','bg-blue-500','bg-emerald-500','bg-amber-400','bg-violet-500','bg-cyan-400']; @endphp
@@ -49,7 +75,7 @@
                                     <div class="flex-1 p-8">
                                         <div class="flex justify-between items-start mb-4">
                                             <div>
-                                                <h4 class="text-xl font-bold text-slate-800 group-hover:text-blue-600 transition-colors">{{ $quiz->title }}</h4>
+                                                <a href="{{ route('teacher.quiz.show', $quiz) }}" class="text-xl font-bold text-slate-800 hover:text-blue-600 transition-colors inline-block">{{ $quiz->title }}</a>
                                                 <p class="text-slate-400 font-medium text-sm mt-1">{{ $quiz->questions_count }} {{ Str::plural('Question', $quiz->questions_count) }} @if($quiz->time_limit) • {{ $quiz->time_limit }} Min @endif</p>
                                             </div>
                                             <span class="px-2 py-1 text-xs font-bold rounded-full {{ $quiz->is_active ? 'bg-emerald-50 text-emerald-600' : 'bg-gray-100 text-gray-500' }}">{{ $quiz->is_active ? 'Active' : 'Off' }}</span>
@@ -66,6 +92,7 @@
                             @endforeach
                         </div>
                     @endif
+                    </div>
                 </div>
 
                 {{-- TAB 2: Create Quiz (Manual) --}}
@@ -200,6 +227,8 @@
                                     <select name="count" class="w-full p-3 bg-slate-50 border border-slate-100 rounded-xl text-slate-700 focus:outline-none">
                                         <option value="5">5 Questions</option>
                                         <option value="10" selected>10 Questions</option>
+                                        <option value="15" selected>15 Questions</option>
+                                        <option value="20" selected>20 Questions</option>
                                     </select>
                                 </div>
                                 <div>

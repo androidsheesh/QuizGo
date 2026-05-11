@@ -28,7 +28,14 @@
                     </div>
                 @endif
 
-                <div class="w-full flex flex-col items-center gap-3 mb-10" x-data="{ active: 'topic' }">
+                <div class="w-full flex flex-col items-center gap-3 mb-10" x-data="{ active: 'topic', isLoading: false }">
+
+                    {{-- Full-screen Loading Overlay --}}
+                    <div x-show="isLoading" style="display: none;" class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm">
+                        <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-violet-600 mb-4"></div>
+                        <h2 class="text-2xl font-semibold text-slate-800">Quiz is on the making...</h2>
+                        <p class="text-slate-500 mt-2">This may take a few moments. Please don't close this page.</p>
+                    </div>
 
                     <div class="flex flex-wrap justify-center gap-3 mb-4">
                         <button @click="active = 'topic'" class="flex items-center space-x-2 px-6 py-2.5 bg-white border border-gray-200 rounded-full text-slate-600 font-medium hover:bg-slate-50 transition-all" :class="{ 'border-violet-400 bg-violet-50 text-violet-600': active === 'topic' }">
@@ -44,7 +51,7 @@
 
                     {{-- Topic Panel --}}
                     <div x-show="active === 'topic'" x-transition class="w-full">
-                        <form method="POST" action="{{ route('teacher.quiz.ai.topic') }}">
+                        <form method="POST" action="{{ route('teacher.quiz.ai.topic') }}" @submit.prevent="isLoading = true; setTimeout(() => $event.target.submit(), 50)">
                             @csrf
                             <div class="flex items-center space-x-3 mb-3 pl-2">
                                 <label class="text-sm font-semibold text-slate-600">Question Count (Max 20):</label>
@@ -61,7 +68,7 @@
 
                     {{-- Paste Panel --}}
                     <div x-show="active === 'paste'" style="display: none;" x-transition class="w-full">
-                        <form method="POST" action="{{ route('teacher.quiz.ai.text') }}">
+                        <form method="POST" action="{{ route('teacher.quiz.ai.text') }}" @submit.prevent="isLoading = true; setTimeout(() => $event.target.submit(), 50)">
                             @csrf
                             <div class="flex items-center space-x-3 mb-3 pl-2">
                                 <label class="text-sm font-semibold text-slate-600">Question Count (Max 20):</label>
@@ -78,7 +85,7 @@
 
                     {{-- PDF Panel --}}
                     <div x-show="active === 'pdf'" style="display: none;" x-transition class="w-full">
-                        <form method="POST" action="{{ route('teacher.quiz.ai.pdf') }}" enctype="multipart/form-data">
+                        <form method="POST" action="{{ route('teacher.quiz.ai.pdf') }}" enctype="multipart/form-data" @submit.prevent="isLoading = true; setTimeout(() => $event.target.submit(), 50)">
                             @csrf
                             <div class="flex items-center space-x-3 mb-3 pl-2">
                                 <label class="text-sm font-semibold text-slate-600">Question Count (Max 20):</label>

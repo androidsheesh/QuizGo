@@ -10,7 +10,26 @@
                 <div class="flex flex-col md:flex-row md:items-center justify-between mb-10 gap-4">
                     <h2 class="text-3xl font-bold text-slate-800">My decks</h2>
 
-                    <div class="flex items-center space-x-4">
+                    <div class="flex flex-col md:flex-row items-center gap-4">
+                        {{-- Search Bar --}}
+                        <form method="GET" action="{{ route('mydecks') }}" class="flex w-full md:w-auto"
+                              x-data="{ query: '{{ request('search') }}', search() {
+                                  let url = new URL('{{ route('mydecks') }}');
+                                  if (this.query) { url.searchParams.set('search', this.query); }
+                                  fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                                      .then(res => res.text())
+                                      .then(html => {
+                                          let doc = new DOMParser().parseFromString(html, 'text/html');
+                                          document.getElementById('decks-container').innerHTML = doc.getElementById('decks-container').innerHTML;
+                                          window.history.pushState({}, '', url);
+                                      });
+                              } }" @submit.prevent="search">
+                            <input type="text" name="search" x-model="query" @input.debounce.500ms="search" placeholder="Search decks..." class="w-full md:w-64 p-2 bg-white border border-gray-200 rounded-xl text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-400/30 focus:border-emerald-300 transition-all shadow-sm">
+                            <button type="submit" class="ml-2 px-4 py-2 bg-slate-900 text-white font-bold rounded-xl shadow-sm hover:bg-slate-800 transition-colors">
+                                Search
+                            </button>
+                        </form>
+
                         <button @click="showDeckModal = true"
                             class="group flex items-center space-x-2 px-6 py-2.5 bg-indigo-600 text-white rounded-2xl
                                 shadow-[0_4px_0_0_#4338ca] hover:shadow-[0_2px_0_0_#4338ca] hover:translate-y-[2px]
@@ -60,11 +79,12 @@
                 </div>
 
                 {{-- Decks Grid --}}
-                @if($decks->isEmpty())
+                <div id="decks-container">
+                    @if($decks->isEmpty())
                     <div class="text-center py-20 bg-white rounded-[2rem] border border-gray-100 shadow-sm">
                         <div class="text-5xl mb-4">📭</div>
-                        <h3 class="text-xl font-bold text-slate-700">No decks yet</h3>
-                        <p class="text-slate-400 mt-2">Create your first deck to start studying!</p>
+                        <h3 class="text-xl font-bold text-slate-700">No decks found</h3>
+                        <p class="text-slate-400 mt-2">@if(request('search')) Try a different search term! @else Create your first deck to start studying! @endif</p>
                     </div>
                 @else
                 @php
@@ -202,6 +222,7 @@
                         @endif
                     </nav>
                 @endif
+                </div>
             </div>
 
         </main>

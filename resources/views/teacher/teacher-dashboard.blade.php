@@ -56,12 +56,34 @@
 
                 {{-- My Classes Section --}}
                 <div class="mb-12" x-data="{ showCreateClass: false }">
-                    <div class="flex justify-between items-center mb-6">
+                    <div class="flex flex-col md:flex-row justify-between md:items-center mb-6 gap-4">
                         <h3 class="text-xl font-bold text-slate-700">My Classes</h3>
-                        <button @click="showCreateClass = !showCreateClass" class="flex items-center space-x-2 px-5 py-2 bg-slate-900 text-white rounded-2xl shadow-lg shadow-slate-200 hover:bg-slate-800 transition-all text-sm font-semibold">
-                            <span class="text-lg">＋</span>
-                            <span>New Class</span>
-                        </button>
+
+                        <div class="flex flex-col md:flex-row items-center gap-4">
+                            {{-- Search Bar --}}
+                            <form method="GET" action="{{ route('teacher.dashboard') }}" class="flex w-full md:w-auto"
+                                  x-data="{ query: '{{ request('search_class') }}', search() {
+                                      let url = new URL('{{ route('teacher.dashboard') }}');
+                                      if (this.query) { url.searchParams.set('search_class', this.query); }
+                                      fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                                          .then(res => res.text())
+                                          .then(html => {
+                                              let doc = new DOMParser().parseFromString(html, 'text/html');
+                                              document.getElementById('teacher-classes-container').innerHTML = doc.getElementById('teacher-classes-container').innerHTML;
+                                              window.history.pushState({}, '', url);
+                                          });
+                                  } }" @submit.prevent="search">
+                                <input type="text" name="search_class" x-model="query" @input.debounce.500ms="search" placeholder="Search classes..." class="w-full md:w-64 p-2 bg-white border border-gray-200 rounded-xl text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-400/30 focus:border-emerald-300 transition-all shadow-sm">
+                                <button type="submit" class="ml-2 px-4 py-2 bg-emerald-500 text-white font-bold rounded-xl shadow-sm hover:bg-emerald-600 transition-colors">
+                                    Search
+                                </button>
+                            </form>
+
+                            <button @click="showCreateClass = !showCreateClass" class="flex items-center space-x-2 px-5 py-2 bg-slate-900 text-white rounded-2xl shadow-lg shadow-slate-200 hover:bg-slate-800 transition-all text-sm font-semibold whitespace-nowrap">
+                                <span class="text-lg">＋</span>
+                                <span>New Class</span>
+                            </button>
+                        </div>
                     </div>
 
                     {{-- Create Class Form --}}
@@ -105,11 +127,12 @@
                     @endif
 
                     {{-- Class Cards --}}
+                    <div id="teacher-classes-container">
                     @if($classrooms->isEmpty())
                         <div class="text-center py-14 bg-white rounded-3xl border border-gray-100 shadow-sm">
                             <div class="text-4xl mb-3">🏫</div>
-                            <h4 class="text-base font-bold text-slate-700">No classes yet</h4>
-                            <p class="text-slate-400 text-sm mt-1">Create your first class to start managing students!</p>
+                            <h4 class="text-base font-bold text-slate-700">No classes found</h4>
+                            <p class="text-slate-400 text-sm mt-1">@if(request('search_class')) Try a different search term! @else Create your first class to start managing students! @endif</p>
                         </div>
                     @else
                         @php
@@ -183,6 +206,7 @@
                             @endif
                         </nav>
                     @endif
+                    </div>
                 </div>
 
                 {{-- Recent Quizzes Section --}}
@@ -197,7 +221,7 @@
                             <div class="text-4xl mb-3">📝</div>
                             <h4 class="text-base font-bold text-slate-700">No quizzes yet</h4>
                             <p class="text-slate-400 text-sm mt-1">Create your first quiz to get started!</p>
-                            <a href="{{ route('teacher.quiz.create') }}" class="inline-block mt-5 px-6 py-2 bg-emerald-500 text-white text-sm font-semibold rounded-full hover:bg-emerald-600 transition-colors shadow-lg shadow-emerald-200">
+                            <a href="{{ route('teacher.quiz.index') }}" class="inline-block mt-5 px-6 py-2 bg-emerald-500 text-white text-sm font-semibold rounded-full hover:bg-emerald-600 transition-colors shadow-lg shadow-emerald-200">
                                 Create a Quiz
                             </a>
                         </div>

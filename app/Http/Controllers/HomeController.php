@@ -8,6 +8,9 @@ use App\Services\GeminiServices;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Cache;
+use App\Jobs\ProcessPdfFlashcards;
+use Illuminate\Support\Facades\Storage;
 
 class HomeController extends Controller
 {
@@ -15,15 +18,28 @@ class HomeController extends Controller
     {
         $user = Auth::user();
 
-        // Grab the 2 most recent decks for the homepage preview
-        $decks = $user
-            ? $user->decks()->withCount('flashcards')->latest()->take(2)->get()
-            : collect();
+        if ($user) {
+            $cacheKey = "user_{$user->id}_latest_decks";
 
-        return view('home', [
-            'user' => $user,
-            'decks' => $decks,
-        ]);
+            // 1. Get the data from Redis as a JSON string
+            $jsonDecks = Cache::remember($cacheKey, 1800, function () use ($user) {
+                return $user->decks()
+                    ->withCount('flashcards')
+                    ->latest()
+                    ->take(2)
+                    ->get()
+                    ->toJson();
+            });
+
+            // 2. Turn the JSON back into an array, then "Hydrate" it into Deck Models
+            $decksData = json_decode($jsonDecks, true);
+            $decks = Deck::hydrate($decksData);
+
+        } else {
+            $decks = collect();
+        }
+
+        return view('home', compact('user', 'decks'));
     }
 
     public function generateFromTopic(Request $request, GeminiServices $gemini)
@@ -34,12 +50,21 @@ class HomeController extends Controller
         ]);
 
         try {
+            $topic = strtolower($request->topic);
             $count = $request->input('count', 10);
-            $flashcards = $gemini->generateFlashcardsFromTopic($request->topic, $count);
+
+            // 1. Create a unique cache key based on topic and count
+            $cacheKey = "flashcards_" . md5($topic . $count);
+
+            // 2. Try to get data from Redis, or run the AI logic if it's missing
+            // We cache it for 24 hours (86400 seconds)
+            $flashcards = Cache::remember($cacheKey, 86400, function () use ($gemini, $topic, $count) {
+                return $gemini->generateFlashcardsFromTopic($topic, $count);
+            });
 
             $deck = Deck::create([
                 'user_id' => Auth::id(),
-                'title' => ucfirst($request->topic),
+                'title' => ucfirst($topic),
             ]);
 
             foreach ($flashcards as $card) {
@@ -51,12 +76,13 @@ class HomeController extends Controller
             }
 
             return redirect()->route('decks.show', $deck)->with('success', 'Flashcards generated!');
+
         } catch (\Exception $e) {
-            return back()->withErrors(['ai' => $e->getMessage()])->withInput();
+            return back()->withErrors(['ai' => 'Failed to generate flashcards: ' . $e->getMessage()])->withInput();
         }
     }
 
-    public function generateFromPdf(Request $request, GeminiServices $gemini)
+        public function generateFromPdf(Request $request)
     {
         $request->validate([
             'pdf' => 'required|file|mimes:pdf|max:10000',
@@ -65,26 +91,38 @@ class HomeController extends Controller
 
         try {
             $count = $request->input('count', 10);
-            $path = $request->file('pdf')->getPathname();
-            $flashcards = $gemini->generateFlashcardsFromPdf($path, $count);
+            $file = $request->file('pdf');
+            $originalTitle = $file->getClientOriginalName();
 
-            $title = $request->file('pdf')->getClientOriginalName();
-            $deck = Deck::create([
-                'user_id' => Auth::id(),
-                'title' => str_replace('.pdf', '', $title),
-            ]);
+            $fileName = time() . '_' . str_replace(' ', '_', $originalTitle);
 
-            foreach ($flashcards as $card) {
-                Flashcard::create([
-                    'deck_id' => $deck->id,
-                    'question' => $card['question'] ?? ($card['q'] ?? ''),
-                    'answer' => $card['answer'] ?? ($card['a'] ?? ''),
-                ]);
+            // 1. SAVE the file using the 'local' disk
+            $path = $file->storeAs('pdf_uploads', $fileName, 'local');
+
+            // 2. GET the correct absolute path
+            $fullPath = \Storage::disk('local')->path($path);
+
+            // 3. VERIFY using the Storage facade
+            if (!\Storage::disk('local')->exists($path)) {
+                throw new \Exception("File was not saved correctly.");
             }
+            // 4. DISPATCH the job synchronously so it waits to finish
+            ProcessPdfFlashcards::dispatchSync(
+                auth()->id(),
+                $fullPath,
+                $count,
+                $originalTitle
+            );
 
-            return redirect()->route('decks.show', $deck)->with('success', 'Flashcards generated successfully!');
+            // Fetch the newly created deck
+            $newDeck = auth()->user()->decks()->latest()->first();
+
+            return redirect()->route('decks.show', $newDeck)
+                ->with('success', 'Flashcards generated successfully!');
+
         } catch (\Exception $e) {
-            return back()->withErrors(['ai' => $e->getMessage()])->withInput();
+            \Log::error("PDF Upload Error: " . $e->getMessage());
+            return back()->withErrors(['ai' => 'Error: ' . $e->getMessage()]);
         }
     }
     public function generateFromText(Request $request, GeminiServices $gemini)
