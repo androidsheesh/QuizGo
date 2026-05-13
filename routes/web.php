@@ -24,7 +24,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [WelcomeController::class, 'show'])->name('welcome');
 
 Route::get('/signup', [SignupController::class, 'create']);
-Route::post('/signup', [SignupController::class, 'store'])->middleware('throttle:3,1');
+Route::post('/signup', [SignupController::class, 'store'])->middleware('throttle:3,1');// prevent user or bots creating 1k or more account per minute or something
 
 Route::get('/signin', [SigninController::class, 'create']);
 Route::post('/signin', [SigninController::class, 'store']);
