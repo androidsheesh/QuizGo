@@ -122,6 +122,7 @@ Route::middleware(['auth', 'teacher', 'prevent-back'])->prefix('teacher')->name(
 
 //acts as the "checker" that the frontend talks to while the user sees the loading screen.
 Route::get('/api/check-new-deck/{oldId}', function ($oldId) {
+    // Check if there is ANY deck created after the oldId for this user
     $newDeck = Auth::user()->decks()
         ->where('id', '>', $oldId)
         ->latest()
@@ -132,5 +133,17 @@ Route::get('/api/check-new-deck/{oldId}', function ($oldId) {
         'deck_id' => $newDeck?->id
     ]);
 })->middleware('auth');
+
+Route::get('/api/check-new-quiz/{oldId}', function ($oldId) {
+    $newQuiz = \App\Models\Quiz::where('teacher_id', Auth::id())
+        ->where('id', '>', $oldId)
+        ->latest()
+        ->first();
+
+    return response()->json([
+        'is_ready' => (bool) $newQuiz,
+        'quiz_id' => $newQuiz?->id
+    ]);
+})->middleware(['auth', 'teacher']);
 
 require __DIR__.'/auth.php';
