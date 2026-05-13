@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\ProcessAiQuiz;
 use App\Models\Quiz;
-use App\Models\QuizQuestion;
-use App\Services\GeminiServices;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class TeacherAiQuizController extends Controller
@@ -16,30 +16,7 @@ class TeacherAiQuizController extends Controller
         return view('teacher.ai-quiz');
     }
 
-    private function saveQuizAndQuestions($title, $questionsData)
-    {
-        $quiz = Quiz::create([
-            'teacher_id' => Auth::id(),
-            'title' => $title,
-            'description' => 'AI Generated Quiz',
-            'is_active' => true,
-        ]);
-
-        foreach ($questionsData as $index => $q) {
-            QuizQuestion::create([
-                'quiz_id' => $quiz->id,
-                'type' => $q['type'] ?? 'multiple_choice',
-                'question' => $q['question'] ?? 'No Question',
-                'correct_answer' => $q['correct_answer'] ?? '',
-                'choices' => $q['choices'] ?? [],
-                'order' => $index,
-            ]);
-        }
-
-        return $quiz;
-    }
-
-    public function generate(Request $request, GeminiServices $gemini)
+    public function generate(Request $request)
     {
         $request->validate([
             'files' => 'nullable|array',
@@ -49,31 +26,37 @@ class TeacherAiQuizController extends Controller
         ]);
 
         try {
+            $latestQuizId = Quiz::where('teacher_id', Auth::id())->latest()->first()?->id ?? 0;
             $count = $request->input('count', 10);
             $uploadedFile = collect($request->file('files', []))->filter()->first();
 
             if ($uploadedFile && $uploadedFile->getClientOriginalExtension() === 'pdf') {
-                $questions = $gemini->generateQuizFromPdf($uploadedFile->getPathname(), $count);
                 $title = str_replace('.pdf', '', $uploadedFile->getClientOriginalName()).' Quiz';
+                $sourceType = 'pdf';
+                $source = $this->storeUploadedAiFile($uploadedFile);
             } elseif ($uploadedFile && $uploadedFile->getClientOriginalExtension() === 'txt') {
-                $questions = $gemini->generateQuizFromText(file_get_contents($uploadedFile->getPathname()) ?: '', $count);
                 $title = str_replace('.txt', '', $uploadedFile->getClientOriginalName()).' Quiz';
+                $sourceType = 'txt';
+                $source = $this->storeUploadedAiFile($uploadedFile);
             } elseif (filled($request->input('content'))) {
-                $questions = $gemini->generateQuizFromText($request->input('content'), $count);
                 $title = Str::words($request->input('content'), 5, '...').' Quiz';
+                $sourceType = 'text';
+                $source = $request->input('content');
             } else {
                 return back()->withErrors(['ai' => 'Upload a PDF/TXT file or paste content before generating a quiz.'])->withInput();
             }
 
-            $quiz = $this->saveQuizAndQuestions(ucfirst($title), $questions);
+            ProcessAiQuiz::dispatch(Auth::id(), $sourceType, $source, $count, ucfirst($title));
 
-            return redirect()->route('teacher.quiz.show', $quiz)->with('success', 'AI Quiz generated successfully!');
+            return redirect()->route('teacher.quiz.index')
+                ->with('success', 'Your quiz is being processed in the background. You can move to another page while it finishes.')
+                ->with('waiting_for_quiz', $latestQuizId);
         } catch (\Exception $e) {
             return back()->withErrors(['ai' => $e->getMessage()])->withInput();
         }
     }
 
-    public function generateFromTopic(Request $request, GeminiServices $gemini)
+    public function generateFromTopic(Request $request)
     {
         $request->validate([
             'topic' => 'required|string|max:255',
@@ -81,17 +64,20 @@ class TeacherAiQuizController extends Controller
         ]);
 
         try {
+            $latestQuizId = Quiz::where('teacher_id', Auth::id())->latest()->first()?->id ?? 0;
             $count = $request->input('count', 10);
-            $questions = $gemini->generateQuizFromTopic($request->topic, $count);
-            $quiz = $this->saveQuizAndQuestions(ucfirst($request->topic).' Quiz', $questions);
 
-            return redirect()->route('teacher.quiz.show', $quiz)->with('success', 'AI Quiz generated successfully!');
+            ProcessAiQuiz::dispatch(Auth::id(), 'topic', $request->topic, $count, ucfirst($request->topic).' Quiz');
+
+            return redirect()->route('teacher.quiz.index')
+                ->with('success', 'Your quiz is being processed in the background. You can move to another page while it finishes.')
+                ->with('waiting_for_quiz', $latestQuizId);
         } catch (\Exception $e) {
             return back()->withErrors(['ai' => $e->getMessage()])->withInput();
         }
     }
 
-    public function generateFromText(Request $request, GeminiServices $gemini)
+    public function generateFromText(Request $request)
     {
         $request->validate([
             'text' => 'required|string',
@@ -99,19 +85,21 @@ class TeacherAiQuizController extends Controller
         ]);
 
         try {
+            $latestQuizId = Quiz::where('teacher_id', Auth::id())->latest()->first()?->id ?? 0;
             $count = $request->input('count', 10);
-            $questions = $gemini->generateQuizFromText($request->text, $count);
-
             $title = Str::words($request->text, 5, '...').' Quiz';
-            $quiz = $this->saveQuizAndQuestions(ucfirst($title), $questions);
 
-            return redirect()->route('teacher.quiz.show', $quiz)->with('success', 'AI Quiz generated successfully!');
+            ProcessAiQuiz::dispatch(Auth::id(), 'text', $request->text, $count, ucfirst($title));
+
+            return redirect()->route('teacher.quiz.index')
+                ->with('success', 'Your quiz is being processed in the background. You can move to another page while it finishes.')
+                ->with('waiting_for_quiz', $latestQuizId);
         } catch (\Exception $e) {
             return back()->withErrors(['ai' => $e->getMessage()])->withInput();
         }
     }
 
-    public function generateFromPdf(Request $request, GeminiServices $gemini)
+    public function generateFromPdf(Request $request)
     {
         $request->validate([
             'pdf' => 'required|file|mimes:pdf|max:10240',
@@ -119,16 +107,26 @@ class TeacherAiQuizController extends Controller
         ]);
 
         try {
+            $latestQuizId = Quiz::where('teacher_id', Auth::id())->latest()->first()?->id ?? 0;
             $count = $request->input('count', 10);
-            $path = $request->file('pdf')->getPathname();
-            $questions = $gemini->generateQuizFromPdf($path, $count);
-
             $title = str_replace('.pdf', '', $request->file('pdf')->getClientOriginalName()).' Quiz';
-            $quiz = $this->saveQuizAndQuestions($title, $questions);
+            $path = $this->storeUploadedAiFile($request->file('pdf'));
 
-            return redirect()->route('teacher.quiz.show', $quiz)->with('success', 'AI Quiz generated successfully!');
+            ProcessAiQuiz::dispatch(Auth::id(), 'pdf', $path, $count, $title);
+
+            return redirect()->route('teacher.quiz.index')
+                ->with('success', 'Your PDF quiz is being processed in the background. You can move to another page while it finishes.')
+                ->with('waiting_for_quiz', $latestQuizId);
         } catch (\Exception $e) {
             return back()->withErrors(['ai' => $e->getMessage()])->withInput();
         }
+    }
+
+    private function storeUploadedAiFile($file): string
+    {
+        $fileName = time() . '_' . str_replace(' ', '_', $file->getClientOriginalName());
+        $path = $file->storeAs('ai_quiz_uploads', $fileName, 'local');
+
+        return Storage::disk('local')->path($path);
     }
 }

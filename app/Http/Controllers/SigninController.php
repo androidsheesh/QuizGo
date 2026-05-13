@@ -3,6 +3,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\User;
 
 class SigninController extends Controller
 {
@@ -32,6 +33,6 @@ class SigninController extends Controller
         return back()->withErrors([
             'email'=> 'Invalid email',
 
-        ]);
+        ])->withInput();
     }
 }

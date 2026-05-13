@@ -40,6 +40,6 @@ class TeacherSigninController extends Controller
 
         return back()->withErrors([
             'email' => 'Invalid email or password',
-        ]);
+        ])->withInput();
     }
 }
