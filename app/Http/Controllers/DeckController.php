@@ -81,7 +81,7 @@ class DeckController extends Controller
             abort(403, 'Unauthorized action.');
         }
 
-        $deck->delete($deck);
+        $deck->delete();
 
         return redirect()->route('mydecks')->with('success', 'Deck deleted successfully.');
     }
