@@ -78,6 +78,46 @@
                     </div>
                 </div>
 
+                @if(session('waiting_for_deck'))
+                    <div id="processing-notification"
+                        class="mb-8 p-6 bg-indigo-50 border-2 border-dashed border-indigo-200 rounded-[2rem] flex items-center justify-between animate-pulse">
+                        <div class="flex items-center gap-4">
+                            <div class="w-10 h-10 flex items-center justify-center bg-indigo-500 rounded-full text-white">
+                                <svg class="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-bold text-indigo-900">AI is processing your request...</h3>
+                                <p class="text-indigo-600 text-sm">The queue is running in the background. You can continue using the app.</p>
+                            </div>
+                        </div>
+                        <span class="px-4 py-1.5 bg-white/50 text-indigo-700 text-xs font-bold uppercase tracking-wider rounded-full border border-indigo-100">
+                            Background Process
+                        </span>
+                    </div>
+
+                    <script>
+                        document.addEventListener('DOMContentLoaded', function() {
+                            const oldId = "{{ session('waiting_for_deck') }}";
+
+                            const checkInterval = setInterval(() => {
+                                fetch(`/api/check-new-deck/${oldId}`)
+                                    .then(response => response.json())
+                                    .then(data => {
+                                        if (data.is_ready) {
+                                            clearInterval(checkInterval);
+                                            // Visual cue that we are finishing
+                                            document.querySelector('#processing-notification h3').innerText = "Redirecting...";
+                                            window.location.href = `/decks/${data.deck_id}`;
+                                        }
+                                    })
+                                    .catch(error => console.error('Error checking deck status:', error));
+                            }, 2000);
+                        });
+                    </script>
+                @endif
                 {{-- Decks Grid --}}
                 <div id="decks-container">
                     @if($decks->isEmpty())
@@ -172,10 +212,6 @@
                                     </div>
 
                                 </div>
-
-                                <div class="w-full h-1.5 bg-slate-100 rounded-full mt-6 overflow-hidden">
-                                    <div class="h-full rounded-full bg-gradient-to-r {{ $accent['stripe'] }}" style="width: {{ min(100, max(5, $deck->flashcards_count * 5)) }}%"></div>
-                                </div>
                             </div>
                         </div>
                     @endforeach
@@ -209,6 +245,7 @@
                                 @endif
                             @endforeach
                         </div>
+
 
                         {{-- Next Page Link --}}
                         @if ($decks->hasMorePages())

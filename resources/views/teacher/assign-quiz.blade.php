@@ -23,6 +23,51 @@
                 @if(session('info'))
                     <div class="bg-blue-50 border border-blue-200 text-blue-700 px-6 py-3 rounded-2xl mb-6 font-medium text-sm">{{ session('info') }}</div>
                 @endif
+                @if ($errors->any())
+                    <div class="bg-red-50 border border-red-200 text-red-700 px-6 py-3 rounded-2xl mb-6 font-medium text-sm">
+                        {{ $errors->first() }}
+                    </div>
+                @endif
+
+                @if(session('waiting_for_quiz'))
+                    <div id="quiz-processing-notification"
+                        class="mb-8 p-6 bg-violet-50 border-2 border-dashed border-violet-200 rounded-[2rem] flex items-center justify-between animate-pulse">
+                        <div class="flex items-center gap-4">
+                            <div class="w-10 h-10 flex items-center justify-center bg-violet-500 rounded-full text-white">
+                                <svg class="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-bold text-violet-900">AI is processing your quiz...</h3>
+                                <p class="text-violet-600 text-sm">The queue is running in the background. You can continue using the app.</p>
+                            </div>
+                        </div>
+                        <span class="px-4 py-1.5 bg-white/50 text-violet-700 text-xs font-bold uppercase tracking-wider rounded-full border border-violet-100">
+                            Background Process
+                        </span>
+                    </div>
+
+                    <script>
+                        document.addEventListener('DOMContentLoaded', function() {
+                            const oldId = "{{ session('waiting_for_quiz') }}";
+
+                            const checkInterval = setInterval(() => {
+                                fetch(`/api/check-new-quiz/${oldId}`)
+                                    .then(response => response.json())
+                                    .then(data => {
+                                        if (data.is_ready) {
+                                            clearInterval(checkInterval);
+                                            document.querySelector('#quiz-processing-notification h3').innerText = "Redirecting...";
+                                            window.location.href = `/teacher/quizzes/${data.quiz_id}`;
+                                        }
+                                    })
+                                    .catch(error => console.error('Error checking quiz status:', error));
+                            }, 2000);
+                        });
+                    </script>
+                @endif
 
                 {{-- Tabs --}}
                 <div class="flex space-x-1 bg-white rounded-2xl p-1.5 border border-gray-100 shadow-sm mb-8 w-fit">
@@ -72,21 +117,25 @@
                             @foreach($quizzes as $i => $quiz)
                                 <div class="group relative flex flex-col bg-white border border-gray-100 rounded-[2rem] overflow-hidden shadow-sm hover:shadow-xl hover:shadow-slate-200/50 transition-all duration-300 transform hover:-translate-y-1">
                                     <div class="h-3 {{ $colors[$i % count($colors)] }}"></div>
-                                    <div class="flex-1 p-8">
-                                        <div class="flex justify-between items-start mb-4">
-                                            <div>
-                                                <a href="{{ route('teacher.quiz.show', $quiz) }}" class="text-xl font-bold text-slate-800 hover:text-blue-600 transition-colors inline-block">{{ $quiz->title }}</a>
-                                                <p class="text-slate-400 font-medium text-sm mt-1">{{ $quiz->questions_count }} {{ Str::plural('Question', $quiz->questions_count) }} @if($quiz->time_limit) • {{ $quiz->time_limit }} Min @endif</p>
+                                    <div class="flex-1 flex flex-col">
+                                        <div class="flex-1 p-8 pb-5">
+                                            <div class="flex justify-between items-start gap-3 mb-4">
+                                                <div class="min-w-0">
+                                                    <a href="{{ route('teacher.quiz.show', $quiz) }}" class="text-xl font-bold text-slate-800 hover:text-blue-600 transition-colors block truncate" title="{{ $quiz->title }}">{{ $quiz->title }}</a>
+                                                    <p class="text-slate-400 font-medium text-sm mt-1">{{ $quiz->questions_count }} {{ Str::plural('Question', $quiz->questions_count) }} @if($quiz->time_limit) • {{ $quiz->time_limit }} Min @endif</p>
+                                                </div>
+                                                <span class="shrink-0 px-2 py-1 text-xs font-bold rounded-full {{ $quiz->is_active ? 'bg-emerald-50 text-emerald-600' : 'bg-gray-100 text-gray-500' }}">{{ $quiz->is_active ? 'Active' : 'Off' }}</span>
                                             </div>
-                                            <span class="px-2 py-1 text-xs font-bold rounded-full {{ $quiz->is_active ? 'bg-emerald-50 text-emerald-600' : 'bg-gray-100 text-gray-500' }}">{{ $quiz->is_active ? 'Active' : 'Off' }}</span>
+                                            @if($quiz->description)
+                                                <p class="text-gray-500 text-sm mt-2 line-clamp-2">{{ $quiz->description }}</p>
+                                            @endif
+                                            @if($quiz->assignments->isNotEmpty())
+                                                <p class="text-xs text-blue-500 font-medium mt-4 line-clamp-2">Assigned to: {{ $quiz->assignments->pluck('classroom.name')->join(', ') }}</p>
+                                            @endif
                                         </div>
-                                        @if($quiz->description)
-                                            <p class="text-gray-500 text-sm mt-2 mb-4 line-clamp-2">{{ $quiz->description }}</p>
-                                        @endif
-                                        @if($quiz->assignments->isNotEmpty())
-                                            <p class="text-xs text-blue-500 font-medium mb-4">Assigned to: {{ $quiz->assignments->pluck('classroom.name')->join(', ') }}</p>
-                                        @endif
-                                        <button @click="openAssignModal({{ $quiz->id }}, '{{ addslashes($quiz->title) }}')" class="w-full py-3 bg-slate-50 text-slate-700 font-semibold rounded-xl group-hover:bg-blue-50 group-hover:text-blue-600 border border-slate-100 transition-colors">Assign to Class</button>
+                                        <div class="p-8 pt-0 mt-auto">
+                                            <button @click="openAssignModal({{ $quiz->id }}, '{{ addslashes($quiz->title) }}')" class="w-full py-3 bg-slate-50 text-slate-700 font-semibold rounded-xl group-hover:bg-blue-50 group-hover:text-blue-600 border border-slate-100 transition-colors">Assign to Class</button>
+                                        </div>
                                     </div>
                                 </div>
                             @endforeach
@@ -181,7 +230,9 @@
 
                 {{-- TAB 3: AI Generate --}}
                 <div x-show="tab==='ai'" x-transition x-cloak>
-                    <form method="POST" action="{{ route('teacher.quiz.ai.generate') }}" enctype="multipart/form-data">
+                    <form method="POST" action="{{ route('teacher.quiz.ai.generate') }}" enctype="multipart/form-data"
+                          x-data="aiUpload()"
+                          @submit.prevent="if (!tooLarge) $event.target.submit()">
                         @csrf
                         <div class="bg-white rounded-[2rem] border border-gray-100 p-8 shadow-sm mb-6">
                             <div class="text-center mb-8">
@@ -191,10 +242,10 @@
                             </div>
 
                             {{-- File Upload Area --}}
-                            <div class="mb-6" x-data="aiUpload()">
+                            <div class="mb-6">
                                 <label class="block text-sm font-semibold text-slate-600 mb-2">Upload Files</label>
                                 <div @dragover.prevent="dragging=true" @dragleave="dragging=false" @drop.prevent="handleDrop($event)"
-                                     :class="dragging ? 'border-emerald-400 bg-emerald-50' : 'border-slate-200 bg-slate-50'"
+                                     :class="tooLarge ? 'border-red-400 bg-red-50/40' : (dragging ? 'border-emerald-400 bg-emerald-50' : 'border-slate-200 bg-slate-50')"
                                      class="border-2 border-dashed rounded-2xl p-10 text-center transition-all cursor-pointer"
                                      @click="$refs.fileInput.click()">
                                     <input type="file" name="files[]" accept=".pdf,.txt" class="hidden" x-ref="fileInput" @change="handleFiles($event)">
@@ -206,8 +257,11 @@
                                     <div class="mt-4 space-y-2">
                                         <template x-for="(f, i) in files" :key="i">
                                             <div class="flex items-center justify-between bg-slate-50 px-4 py-2 rounded-xl">
-                                                <span class="text-sm text-slate-600 truncate" x-text="f.name"></span>
-                                                <button type="button" @click="files.splice(i,1)" class="text-red-400 hover:text-red-600 text-xs">✕</button>
+                                                <div class="min-w-0">
+                                                    <span class="text-sm truncate block" :class="f.size > maxSize ? 'text-red-600' : 'text-slate-600'" x-text="f.name"></span>
+                                                    <span class="text-xs" :class="f.size > maxSize ? 'text-red-400' : 'text-slate-400'" x-text="f.size > maxSize ? 'File is over 10MB limit' : 'Ready to upload'"></span>
+                                                </div>
+                                                <button type="button" @click="removeFile(i)" class="text-red-400 hover:text-red-600 text-xs">✕</button>
                                             </div>
                                         </template>
                                     </div>
@@ -241,7 +295,10 @@
                                 </div>
                             </div>
 
-                            <button type="submit" class="w-full py-4 bg-gradient-to-r from-violet-500 to-purple-600 text-white font-bold rounded-2xl shadow-lg shadow-violet-200 hover:shadow-xl hover:from-violet-600 hover:to-purple-700 active:scale-[0.98] transition-all text-lg">
+                            <button type="submit"
+                                    :disabled="tooLarge"
+                                    :class="tooLarge ? 'bg-gray-300 cursor-not-allowed shadow-none' : 'bg-gradient-to-r from-violet-500 to-purple-600 shadow-violet-200 hover:shadow-xl hover:from-violet-600 hover:to-purple-700 active:scale-[0.98]'"
+                                    class="w-full py-4 text-white font-bold rounded-2xl shadow-lg transition-all text-lg">
                                 ✨ Generate Quiz
                             </button>
                         </div>
@@ -305,10 +362,25 @@
     }
     function aiUpload() {
         return {
+            maxSize: 10 * 1024 * 1024,
             dragging: false,
             files: [],
-            handleDrop(e) { this.dragging = false; this.files = [...this.files, ...e.dataTransfer.files]; },
-            handleFiles(e) { this.files = [...this.files, ...e.target.files]; }
+            tooLarge: false,
+            handleDrop(e) {
+                this.dragging = false;
+                this.$refs.fileInput.files = e.dataTransfer.files;
+                this.handleFiles({ target: this.$refs.fileInput });
+            },
+            handleFiles(e) {
+                this.files = [...e.target.files];
+                this.tooLarge = this.files.some(file => file.size > this.maxSize);
+            },
+            removeFile(index) {
+                const transfer = new DataTransfer();
+                this.files.filter((file, i) => i !== index).forEach(file => transfer.items.add(file));
+                this.$refs.fileInput.files = transfer.files;
+                this.handleFiles({ target: this.$refs.fileInput });
+            }
         }
     }
     </script>
