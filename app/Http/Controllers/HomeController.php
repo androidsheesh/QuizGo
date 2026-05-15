@@ -96,7 +96,7 @@ class HomeController extends Controller
 
             return redirect()->route('mydecks')
                 ->with('success', 'Your PDF is being processed in the background. You can move to another page while it finishes.')
-                ->with('waiting_for_deck', $latestDeckId); // This is crucial for the JS below
+                ->with('waiting_for_deck', $latestDeckId);
 
         } catch (\Exception $e) {
             \Log::error("PDF Upload Error: " . $e->getMessage());
