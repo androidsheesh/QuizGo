@@ -31,7 +31,6 @@
         </div>
 
         <a href="/myprofile" class="block px-4 py-2 text-sm text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 transition-colors">Your Profile</a>
-        <a href="#" class="block px-4 py-2 text-sm text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 transition-colors">Settings</a>
         {{-- [ PROPER LOGOUT FORM ] --}}
         <form method="POST" action="{{ route('logout') }}">
             @csrf

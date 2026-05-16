@@ -4,48 +4,49 @@
         <x-sidebar/>
 
         <x-dropdown-profile/>
-        <main class="flex-1 p-6 md:p-12 overflow-y-auto relative">
+        <main class="flex-1 px-6 pb-6 pt-20 md:p-12 overflow-y-auto relative">
 
             <div class="max-w-5xl mx-auto flex flex-col">
 
                 {{-- Header --}}
-                <div class="flex flex-col mb-10">
+                <div class="flex flex-col mt-16 lg:mt-0 mb-10">
                     <h2 class="text-3xl md:text-4xl font-bold text-slate-800">Assignments</h2>
                     <p class="text-slate-500 mt-2">Join classes and view your pending quizzes.</p>
                 </div>
 
-                {{-- Join Class Section --}}
-                <div class="bg-white rounded-[2rem] border border-gray-100 p-6 md:p-8 mb-10 shadow-sm">
-                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                        <div>
-                            <h3 class="text-xl font-bold text-slate-700">Join a Class</h3>
-                            <p class="text-slate-400 text-sm mt-1">Ask your teacher for the class code, then enter it here.</p>
-                        </div>
-                        <form method="POST" action="{{ route('classroom.join') }}" class="flex w-full md:w-auto gap-3">
-                            @csrf
-                            <input type="text" name="code" placeholder="Enter Class Code" required
-                                   class="flex-1 md:w-64 p-3 bg-slate-50 border border-slate-100 rounded-xl text-slate-700 font-mono font-bold uppercase focus:outline-none focus:ring-2 focus:ring-emerald-400/30 focus:border-emerald-300 transition-all">
-                            <button type="submit" class="px-6 py-3 bg-emerald-500 text-white font-bold rounded-xl shadow-md shadow-emerald-200 hover:bg-emerald-600 transition-colors whitespace-nowrap">
-                                Join Class
-                            </button>
-                        </form>
+            {{-- Join Class Section --}}
+            <div class="bg-white rounded-[2rem] border border-gray-100 p-6 md:p-8 mb-10 shadow-sm">
+                <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                    <div>
+                        <h3 class="text-xl font-bold text-slate-700">Join a Class</h3>
+                        <p class="text-slate-400 text-sm mt-1">Ask your teacher for the class code, then enter it here.</p>
                     </div>
 
-                    @if(session('success'))
-                        <div class="mt-4 bg-emerald-50 text-emerald-700 text-sm font-medium px-4 py-3 rounded-xl border border-emerald-100">
-                            ✓ {{ session('success') }}
-                        </div>
-                    @endif
-                    @if($errors->has('code'))
-                        <div class="mt-4 bg-red-50 text-red-700 text-sm font-medium px-4 py-3 rounded-xl border border-red-100">
-                            {{ $errors->first('code') }}
-                        </div>
-                    @endif
+                    <form method="POST" action="{{ route('classroom.join') }}" class="flex flex-col sm:flex-row w-full lg:w-auto gap-3">
+                        @csrf
+                        <input type="text" name="code" placeholder="Enter Class Code" required
+                            class="w-full sm:flex-1 lg:w-64 p-3 bg-slate-50 border border-slate-100 rounded-xl text-slate-700 font-mono font-bold uppercase focus:outline-none focus:ring-2 focus:ring-emerald-400/30 focus:border-emerald-300 transition-all text-center sm:text-left">
+                        <button type="submit" class="w-full sm:w-auto px-6 py-3 bg-emerald-500 text-white font-bold rounded-xl shadow-md shadow-emerald-200 hover:bg-emerald-600 transition-colors whitespace-nowrap">
+                            Join Class
+                        </button>
+                    </form>
                 </div>
+
+                @if(session('success'))
+                    <div class="mt-4 bg-emerald-50 text-emerald-700 text-sm font-medium px-4 py-3 rounded-xl border border-emerald-100">
+                        ✓ {{ session('success') }}
+                    </div>
+                @endif
+                @if($errors->has('code'))
+                    <div class="mt-4 bg-red-50 text-red-700 text-sm font-medium px-4 py-3 rounded-xl border border-red-100">
+                        {{ $errors->first('code') }}
+                    </div>
+                @endif
+            </div>
 
                 {{-- My Classes Grid --}}
                 <div class="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
-                    <h3 class="text-xl font-bold text-slate-700">My Classes</h3>
+                    <h3 class="text-xl font-bold text-slate-700">My Classes / Assignments</h3>
 
                     {{-- Search Bar --}}
                     <form method="GET" action="{{ route('student.assignments') }}" class="flex w-full md:w-auto"

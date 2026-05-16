@@ -1,11 +1,4 @@
 <x-layout>
-    {{-- Optional: Keep the Breeze header slot if your custom layout renders it --}}
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-            {{ __('Dashboard') }}
-        </h2>
-    </x-slot>
-
     <div class="flex min-h-screen bg-[#F9FAFB]">
 
         {{-- Custom Navigation / Sidebar --}}

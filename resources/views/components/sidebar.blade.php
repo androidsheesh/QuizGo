@@ -1,23 +1,15 @@
-<div class="lg:hidden fixed top-0 inset-x-0 h-16 bg-white border-b border-slate-100 z-40 flex items-center justify-between px-4 shadow-sm">
+{{-- STUDENT SIDEBAR --}}
+<div class="lg:hidden fixed top-6 left-10 z-40">
     <button
         type="button"
         id="mobile-sidebar-open"
-        class="w-10 h-10 rounded-xl border border-slate-200 flex items-center justify-center text-slate-700 hover:bg-slate-50 transition-colors"
+        class="w-10 h-10 rounded-xl border border-slate-200 bg-white flex items-center justify-center text-slate-700 shadow-sm hover:bg-slate-50 transition-colors"
         aria-label="Open sidebar"
         aria-controls="mobile-sidebar"
         aria-expanded="false"
     >
         <span class="material-symbols-rounded text-2xl">menu</span>
     </button>
-
-    <a href="{{ route('home') }}" class="flex items-center gap-3 group">
-        <div class="w-9 h-9 bg-indigo-500 rounded-xl flex items-center justify-center shadow-[0_4px_0_0_#4338ca] group-hover:scale-105 transition-transform">
-            <div class="w-4 h-4 bg-white rounded-sm rotate-45"></div>
-        </div>
-        <span class="text-slate-900 font-black text-xl tracking-tighter">QuizGo</span>
-    </a>
-
-    <div class="w-10 h-10"></div>
 </div>
 
 <div
@@ -30,7 +22,7 @@
     id="mobile-sidebar"
     class="fixed lg:sticky top-0 left-0 h-screen w-72 lg:w-64 bg-white border-r border-slate-100 flex flex-col z-50 transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out"
 >
-    {{-- Logo Section --}}
+    {{-- Logo Section inside the sidebar --}}
     <div class="p-6 lg:p-8 mb-4 flex items-center justify-between lg:justify-start">
         <a href="{{ route('home') }}" class="flex items-center gap-3 group">
             <div class="w-10 h-10 bg-indigo-500 rounded-xl flex items-center justify-center shadow-[0_4px_0_0_#4338ca] group-hover:scale-105 transition-transform">
@@ -49,7 +41,7 @@
         </button>
     </div>
 
-    {{-- Navigation --}}
+    {{-- Navigation links --}}
     <nav class="flex-1 px-4 space-y-3 overflow-y-auto overflow-x-hidden pb-6 custom-sidebar-scroll">
         <x-nav-link route="home" icon="home" label="Home" color="indigo" />
         <x-nav-link route="mydecks" icon="style" label="My Decks" color="emerald" />

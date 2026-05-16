@@ -57,7 +57,7 @@
     </div>
 
     {{-- Text Label --}}
-    <span class="hidden md:block {{ $isActive ? 'font-black tracking-tight' : 'font-bold' }}">
+    <span class="md:block {{ $isActive ? 'font-black tracking-tight' : 'font-bold' }}">
         {{ $label }}
     </span>
 </a>

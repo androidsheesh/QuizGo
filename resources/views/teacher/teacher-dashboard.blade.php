@@ -4,18 +4,19 @@
         <x-teacher-sidebar/>
 
         <x-dropdown-profile/>
-        <main class="flex-1 p-6 md:p-12 overflow-y-auto relative">
+        <main class="flex-1 px-6 pb-6 pt-20 md:p-12 overflow-y-auto relative">
 
             <div class="max-w-5xl mx-auto flex flex-col">
 
                 {{-- Header --}}
-                <div class="flex flex-col mb-10">
+                <div class="flex flex-col mt-16 lg:mt-0 mb-10">
                     <h2 class="text-3xl md:text-4xl font-bold text-slate-800">Teacher Dashboard</h2>
                     <p class="text-slate-500 mt-2">Welcome back, {{ Auth::user()->firstname }}! Manage your quizzes and students here.</p>
                 </div>
 
                 {{-- Stats Cards --}}
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+
                     <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100 flex items-center space-x-4 hover:shadow-md transition-shadow">
                         <div class="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center text-emerald-600 text-xl font-bold">
                             📝
@@ -25,6 +26,7 @@
                             <p class="text-2xl font-bold text-slate-800">{{ $activeQuizzes }}</p>
                         </div>
                     </div>
+
                     <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100 flex items-center space-x-4 hover:shadow-md transition-shadow">
                         <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center text-blue-600 text-xl font-bold">
                             👨‍🎓
@@ -34,6 +36,7 @@
                             <p class="text-2xl font-bold text-slate-800">{{ $totalStudents }}</p>
                         </div>
                     </div>
+
                     <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100 flex items-center space-x-4 hover:shadow-md transition-shadow">
                         <div class="w-12 h-12 bg-violet-100 rounded-xl flex items-center justify-center text-violet-600 text-xl font-bold">
                             🏫
@@ -43,15 +46,7 @@
                             <p class="text-2xl font-bold text-slate-800">{{ $totalClasses }}</p>
                         </div>
                     </div>
-                    <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100 flex items-center space-x-4 hover:shadow-md transition-shadow">
-                        <div class="w-12 h-12 bg-yellow-100 rounded-xl flex items-center justify-center text-yellow-600 text-xl font-bold">
-                            ⭐
-                        </div>
-                        <div>
-                            <p class="text-slate-400 text-sm font-medium">Avg Score</p>
-                            <p class="text-2xl font-bold text-slate-800">{{ $avgScore }}%</p>
-                        </div>
-                    </div>
+
                 </div>
 
                 {{-- My Classes Section --}}

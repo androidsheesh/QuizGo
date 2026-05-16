@@ -9,7 +9,7 @@
 
                 {{-- Header --}}
                 <div class="flex flex-col items-center text-center mb-10">
-                    <div class="w-24 h-24 bg-indigo-500 rounded-xl flex items-center justify-center shadow-[0_4px_0_0_#4338ca]">
+                    <div class="w-24 h-24 bg-indigo-500 rounded-xl flex items-center justify-center">
                         <div class="w-12 h-12 bg-white rounded-sm rotate-45"></div>
                     </div>
                     <h2 class="text-3xl md:text-4xl font-medium text-slate-800 mt-4">What do you want to Study?</h2>

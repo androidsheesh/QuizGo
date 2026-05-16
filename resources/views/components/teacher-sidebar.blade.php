@@ -1,24 +1,15 @@
 {{-- TEACHER SIDEBAR --}}
-<div class="lg:hidden fixed top-0 inset-x-0 h-16 bg-white border-b border-slate-100 z-40 flex items-center justify-between px-4 shadow-sm">
+<div class="lg:hidden fixed top-6 left-10 z-40">
     <button
         type="button"
         id="mobile-teacher-sidebar-open"
-        class="w-10 h-10 rounded-xl border border-slate-200 flex items-center justify-center text-slate-700 hover:bg-slate-50 transition-colors"
+        class="w-10 h-10 rounded-xl border border-slate-200 bg-white flex items-center justify-center text-slate-700 shadow-sm hover:bg-slate-50 transition-colors"
         aria-label="Open sidebar"
-        aria-controls="mobile-teacher-sidebar"
+        aria-controls="mobile-sidebar"
         aria-expanded="false"
     >
         <span class="material-symbols-rounded text-2xl">menu</span>
     </button>
-
-    <a href="{{ route('teacher.dashboard') }}" class="flex items-center gap-3 group">
-        <div class="w-9 h-9 bg-indigo-500 rounded-xl flex items-center justify-center shadow-[0_4px_0_0_#4338ca] group-hover:scale-105 transition-transform">
-            <div class="w-4 h-4 bg-white rounded-sm rotate-45"></div>
-        </div>
-        <span class="text-slate-900 font-black text-xl tracking-tighter">QuizGo</span>
-    </a>
-
-    <div class="w-10 h-10"></div>
 </div>
 
 <div

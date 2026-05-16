@@ -1,12 +1,12 @@
 <x-layout>
     <div class="flex min-h-screen bg-[#F9FAFB]">
         <x-teacher-sidebar/>
-        <main class="flex-1 p-6 md:p-12 overflow-y-auto relative">
+        <main class="flex-1 px-6 pb-6 pt-20 md:p-12 overflow-y-auto relative">
             <x-dropdown-profile/>
             <div class="max-w-5xl mx-auto flex flex-col" x-data="assignQuiz()">
 
                 {{-- Header --}}
-                <div class="flex flex-col md:flex-row md:items-center justify-between mb-10 gap-4">
+                <div class="flex flex-col mt-16 lg:mt-0 mb-10">
                     <div>
                         <h2 class="text-3xl font-bold text-slate-800">Assign Quiz</h2>
                         <p class="text-slate-500 mt-2">Create, manage, and assign quizzes to your classes</p>
@@ -140,6 +140,48 @@
                                 </div>
                             @endforeach
                         </div>
+
+                        {{-- Inlined Pagination --}}
+                        @if ($quizzes->hasPages())
+                            <nav role="navigation" aria-label="Pagination Navigation" class="flex items-center justify-center space-x-2 mt-12 mb-20">
+                                {{-- Previous Page Link --}}
+                                @if ($quizzes->onFirstPage())
+                                    <span class="px-4 py-2 text-slate-300 bg-white border border-gray-100 rounded-2xl cursor-not-allowed">
+                                        ← <span class="hidden md:inline ml-1">Prev</span>
+                                    </span>
+                                @else
+                                    <a href="{{ $quizzes->previousPageUrl() }}" class="px-4 py-2 text-slate-600 bg-white border border-gray-100 rounded-2xl hover:bg-slate-50 hover:border-emerald-300 transition-all shadow-sm">
+                                        ← <span class="hidden md:inline ml-1">Prev</span>
+                                    </a>
+                                @endif
+
+                                {{-- Pagination Elements --}}
+                                <div class="flex items-center bg-white border border-gray-100 rounded-2xl p-1 shadow-sm">
+                                    @foreach ($quizzes->getUrlRange(max(1, $quizzes->currentPage() - 1), min($quizzes->lastPage(), $quizzes->currentPage() + 1)) as $page => $url)
+                                        @if ($page == $quizzes->currentPage())
+                                            <span class="w-10 h-10 flex items-center justify-center bg-emerald-500 text-white font-bold rounded-xl shadow-md shadow-emerald-200">
+                                                {{ $page }}
+                                            </span>
+                                        @else
+                                            <a href="{{ $url }}" class="w-10 h-10 flex items-center justify-center text-slate-500 font-semibold rounded-xl hover:bg-slate-50 hover:text-emerald-600 transition-all">
+                                                {{ $page }}
+                                            </a>
+                                        @endif
+                                    @endforeach
+                                </div>
+
+                                {{-- Next Page Link --}}
+                                @if ($quizzes->hasMorePages())
+                                    <a href="{{ $quizzes->nextPageUrl() }}" class="px-4 py-2 text-slate-600 bg-white border border-gray-100 rounded-2xl hover:bg-slate-50 hover:border-emerald-300 transition-all shadow-sm">
+                                        <span class="hidden md:inline mr-1">Next</span> →
+                                    </a>
+                                @else
+                                    <span class="px-4 py-2 text-slate-300 bg-white border border-gray-100 rounded-2xl cursor-not-allowed">
+                                        <span class="hidden md:inline mr-1">Next</span> →
+                                    </span>
+                                @endif
+                            </nav>
+                        @endif
                     @endif
                     </div>
                 </div>
@@ -199,9 +241,7 @@
                                             <label class="block text-sm font-semibold text-slate-600">Choices</label>
                                             <template x-for="(c, ci) in q.choices" :key="ci">
                                                 <div class="flex items-center gap-3">
-                                                    <!-- Keep track of the selected index instead of the raw text -->
                                                     <input type="radio" :name="'questions['+idx+'][correct_choice_index]'" :value="ci" required class="text-emerald-500 focus:ring-emerald-400">
-
                                                     <input type="text" :name="'questions['+idx+'][choices]['+ci+']'" x-model="q.choices[ci]" required :placeholder="'Choice ' + (ci+1)" class="flex-1 p-3 bg-white border border-slate-100 rounded-xl text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-400/30 transition-all">
                                                 </div>
                                             </template>
