@@ -126,8 +126,6 @@ function initializeFlashcardGenerationListener() {
                     message: event.deck_title
                         ? `"${event.deck_title}" has been generated successfully.`
                         : 'Success! Your generated flashcards are ready.',
-                    actionUrl: event.deck_url,
-                    actionLabel: 'Open deck',
                 });
 
                 return;
@@ -156,8 +154,6 @@ function initializeTeacherNotificationListener() {
                 type: event.type || 'success',
                 title: event.title || 'Teacher notification',
                 message: event.message || 'You have a new update.',
-                actionUrl: event.action_url || null,
-                actionLabel: event.action_label || 'Open',
             });
         });
 }
