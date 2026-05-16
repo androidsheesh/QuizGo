@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Events\TeacherNotificationReceived;
 use App\Models\Quiz;
 use App\Models\QuizQuestion;
 use App\Services\GeminiServices;
@@ -13,12 +14,15 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
+use Throwable;
 
 class ProcessAiQuiz implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public $timeout = 120;
+    public $tries = 1;
+    public $failOnTimeout = true;
 
     protected $teacherId;
     protected $sourceType;
@@ -44,32 +48,63 @@ class ProcessAiQuiz implements ShouldQueue
                 throw new \Exception("Gemini returned empty or invalid data.");
             }
 
-            \DB::transaction(function () use ($questions) {
+            $quiz = null;
+
+            \DB::transaction(function () use ($questions, &$quiz) {
                 $quiz = Quiz::create([
                     'teacher_id' => $this->teacherId,
-                    'title' => $this->title,
-                    'description' => 'AI Generated Quiz',
-                    'is_active' => true,
+                    'title'      => $this->title,
+                    'description'=> 'AI Generated Quiz',
+                    'is_active'  => true,
                 ]);
 
                 foreach ($questions as $index => $q) {
                     QuizQuestion::create([
-                        'quiz_id' => $quiz->id,
-                        'type' => $q['type'] ?? 'multiple_choice',
-                        'question' => $q['question'] ?? 'No Question',
+                        'quiz_id'        => $quiz->id,
+                        'type'           => $q['type'] ?? 'multiple_choice',
+                        'question'       => $q['question'] ?? 'No Question',
                         'correct_answer' => $q['correct_answer'] ?? '',
-                        'choices' => $q['choices'] ?? [],
-                        'order' => $index,
+                        'choices'        => $q['choices'] ?? [],
+                        'order'          => $index,
                     ]);
                 }
             });
 
             Cache::forget("teacher_{$this->teacherId}_latest_quizzes");
             $this->deleteStoredFile();
-        } catch (\Exception $e) {
+
+            // ─── Broadcast success notification to the teacher ───────────────────
+            $quizUrl = $quiz ? route('teacher.quiz.show', $quiz->id) : null;
+
+            TeacherNotificationReceived::dispatch(
+                $this->teacherId,
+                'Quiz ready! 🎉',
+                "\"" . $this->title . "\" has been generated successfully.",
+                'success',
+                $quizUrl,
+                'View Quiz',
+            );
+
+        } catch (Throwable $e) {
             Log::error('AI Quiz Processing Failed: ' . $e->getMessage());
+            $this->deleteStoredFile();
             throw $e;
         }
+    }
+
+    /**
+     * Handle a job failure (called by Laravel after all retries are exhausted).
+     */
+    public function failed(Throwable $exception): void
+    {
+        Log::error('AI Quiz Job Failed (failed callback): ' . $exception->getMessage());
+
+        TeacherNotificationReceived::dispatch(
+            $this->teacherId,
+            'Quiz generation failed',
+            'We couldn\'t generate your quiz. Please try a different prompt or try again later.',
+            'error',
+        );
     }
 
     private function generateQuestions(GeminiServices $gemini): array
