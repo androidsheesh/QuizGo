@@ -12,6 +12,26 @@
                 <p class="text-sm text-slate-400 mt-2">Sign in to manage your classrooms and quizzes.</p>
             </div>
 
+            @if (session('confirm_other_device'))
+                <div class="mb-6 max-w-md mx-auto rounded-xl border border-amber-200 bg-amber-50 p-5 text-center">
+                    <p class="text-sm font-bold text-amber-900">Are you sure you wanted to login to other device?</p>
+                    <p class="mt-1 text-sm text-amber-800">Choosing yes will log out your other device and continue here.</p>
+                    <div class="mt-4 flex justify-center gap-3">
+                        <form action="{{ route('teacher.signin.store') }}" method="POST">
+                            @csrf
+                            <input type="hidden" name="email" value="{{ old('email') }}">
+                            <input type="hidden" name="confirm_other_device" value="1">
+                            <button type="submit" class="rounded-xl bg-emerald-500 px-5 py-2 text-sm font-bold text-white hover:bg-emerald-600 transition">
+                                Yes
+                            </button>
+                        </form>
+                        <a href="{{ route('teacher.signin') }}" class="rounded-xl border border-amber-300 px-5 py-2 text-sm font-bold text-amber-900 hover:bg-amber-100 transition">
+                            No
+                        </a>
+                    </div>
+                </div>
+            @endif
+
             <form action="{{ route('teacher.signin.store') }}" method="POST" class="space-y-6 max-w-md mx-auto">
                 @csrf
 

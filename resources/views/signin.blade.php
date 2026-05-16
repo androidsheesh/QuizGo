@@ -1,5 +1,6 @@
 <x-signup title="QuizGo | Sign In">
-    <div class="h-screen bg-[#f8f8f8] flex items-center justify-center p-6">
+    <!-- FIX: Changed h-screen to min-h-screen -->
+    <div class="min-h-screen bg-[#f8f8f8] flex items-center justify-center p-6">
 
         <div class="w-full max-w-3xl min-h-[800px] bg-white border border-gray-200 rounded-2xl shadow-md p-14">
 
@@ -20,6 +21,26 @@
                     </button>
                 </div>
             </div>
+
+            @if (session('confirm_other_device'))
+                <div class="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-5 text-center">
+                    <p class="text-sm font-semibold text-amber-900">Are you sure you wanted to login to other device?</p>
+                    <p class="mt-1 text-sm text-amber-800">Choosing yes will log out your other device and continue here.</p>
+                    <div class="mt-4 flex flex-wrap justify-center gap-3">
+                        <form action="{{ url()->current() }}" method="POST">
+                            @csrf
+                            <input type="hidden" name="email" value="{{ old('email') }}">
+                            <input type="hidden" name="confirm_other_device" value="1">
+                            <button type="submit" class="rounded-full bg-black px-5 py-2 text-sm font-medium text-white transition hover:bg-gray-800">
+                                Yes
+                            </button>
+                        </form>
+                        <a href="{{ url()->current() }}" class="rounded-full border border-amber-300 px-5 py-2 text-sm font-medium text-amber-900 transition hover:bg-amber-100">
+                            No
+                        </a>
+                    </div>
+                </div>
+            @endif
 
             <form action="/signin" method="POST" class="space-y-6">
                 @csrf

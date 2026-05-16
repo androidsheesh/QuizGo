@@ -27,7 +27,7 @@ class AuthenticationTest extends TestCase
         ]);
 
         $this->assertAuthenticated();
-        $response->assertRedirect(route('dashboard', absolute: false));
+        $response->assertRedirect(route('home', absolute: false));
     }
 
     public function test_users_can_not_authenticate_with_invalid_password(): void
@@ -40,6 +40,56 @@ class AuthenticationTest extends TestCase
         ]);
 
         $this->assertGuest();
+    }
+
+    public function test_second_device_login_requires_confirmation(): void
+    {
+        $user = User::factory()->create([
+            'session_token' => 'active-session-token',
+        ]);
+
+        $this->post('/signin', [
+            'email' => $user->email,
+            'password' => 'password',
+        ])
+            ->assertSessionHas('confirm_other_device', true);
+
+        $this->assertGuest();
+        $this->assertSame('active-session-token', $user->fresh()->session_token);
+    }
+
+    public function test_confirmed_second_device_login_replaces_the_active_session(): void
+    {
+        $user = User::factory()->create([
+            'session_token' => 'active-session-token',
+        ]);
+
+        $this->post('/signin', [
+            'email' => $user->email,
+            'password' => 'password',
+        ]);
+
+        $this->post('/signin', [
+            'email' => $user->email,
+            'confirm_other_device' => '1',
+        ])->assertRedirect('/home');
+
+        $this->assertAuthenticatedAs($user);
+        $this->assertNotSame('active-session-token', $user->fresh()->session_token);
+    }
+
+    public function test_logout_from_an_old_session_does_not_clear_the_current_session_token(): void
+    {
+        $user = User::factory()->create([
+            'session_token' => 'current-session-token',
+        ]);
+
+        $this->actingAs($user)
+            ->withSession(['session_token' => 'old-session-token'])
+            ->post('/logout')
+            ->assertRedirect('/');
+
+        $this->assertSame('current-session-token', $user->fresh()->session_token);
     }
 
     public function test_users_can_logout(): void

@@ -49,5 +49,15 @@
             history.pushState(null, null, location.href);
         };
     </script>
+
+    {{-- Realtime logout --}}
+    @if($broadcastUser)
+        <script>
+            window.Echo.private(`user.{{ $broadcastUser->id }}`)
+                .listen('.session.hijacked', () => {
+                    window.location.href = '/signin?kicked=1';
+                });
+        </script>
+    @endif
 </body>
 </html>
