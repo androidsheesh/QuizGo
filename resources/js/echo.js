@@ -5,6 +5,7 @@ window.Pusher = Pusher;
 
 const reverbKey = import.meta.env.VITE_REVERB_APP_KEY;
 const reverbHost = import.meta.env.VITE_REVERB_HOST;
+const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
 
 if (reverbKey && reverbHost) {
     window.Echo = new Echo({
@@ -15,5 +16,10 @@ if (reverbKey && reverbHost) {
         wssPort: import.meta.env.VITE_REVERB_PORT ?? 443,
         forceTLS: (import.meta.env.VITE_REVERB_SCHEME ?? 'https') === 'https',
         enabledTransports: ['ws', 'wss'],
+        auth: {
+            headers: {
+                'X-CSRF-TOKEN': csrfToken ?? '',
+            },
+        },
     });
 }
