@@ -40,16 +40,21 @@
     </style>
         {{-- Top Bar --}}
         <div class="px-6 md:px-12 pt-5 pb-3 shrink-0">
-            <div class="max-w-3xl mx-auto flex items-center justify-between">
-                <a href="{{ route('decks.show', $deck) }}" class="flex items-center gap-2 text-slate-400 hover:text-slate-700 transition-colors">
+            <!-- Refactored layout for perfect viewport centering -->
+            <div class="max-w-3xl mx-auto relative flex items-center justify-center min-h-[44px]">
+
+                <!-- Absolute left positioning for Back button -->
+                <a href="{{ route('decks.show', $deck) }}" class="absolute left-0 flex items-center gap-2 text-slate-400 hover:text-slate-700 transition-colors">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
                     <span class="font-semibold text-sm hidden md:inline">Back to Deck</span>
                 </a>
-                <div class="text-center">
-                    <h2 class="text-lg font-bold text-slate-800">{{ $deck->title }}</h2>
-                    <p class="text-xs text-slate-400 font-medium">Flip Cards</p>
+
+                <!-- Centered Header Group -->
+                <div class="text-center mx-auto px-16">
+                    <h2 class="text-lg font-bold text-slate-800 leading-tight">{{ $deck->title }}</h2>
+                    <p class="text-xs text-slate-400 font-medium mt-0.5">Flip Cards</p>
                 </div>
-                <div class="w-20"></div>
+
             </div>
         </div>
 
@@ -67,7 +72,7 @@
             </div>
         </div>
 
-{{-- Card Area --}}
+        {{-- Card Area --}}
         <div class="flex-1 flex items-center justify-center px-6 min-h-0 mb-6">
             <div class="w-full max-w-xl h-[min(360px,50vh)]">
 

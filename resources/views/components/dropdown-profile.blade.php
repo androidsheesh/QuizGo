@@ -30,7 +30,7 @@
             <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Account</p>
         </div>
 
-        <a href="/myprofile" class="block px-4 py-2 text-sm text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 transition-colors">Your Profile</a>
+        <a href="{{ Auth::check() && Auth::user()->isTeacher() ? route('teacher.profile') : '/myprofile' }}" class="block px-4 py-2 text-sm text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 transition-colors">Your Profile</a>
         {{-- [ PROPER LOGOUT FORM ] --}}
         <form method="POST" action="{{ route('logout') }}">
             @csrf

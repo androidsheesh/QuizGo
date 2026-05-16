@@ -39,6 +39,8 @@
                                 <span class="text-6xl">👤</span>
                             </template>
                         </div>
+
+                        <!-- Button opens the picker -->
                         <button type="button" @click="$refs.avatarInput.click()"
                                 class="absolute bottom-0 right-0 bg-white border border-gray-200 p-2 rounded-full shadow-sm hover:bg-gray-50 hover:scale-110 transition-all">
                             📷
@@ -47,6 +49,11 @@
                     <div>
                         <h2 class="text-4xl font-bold text-slate-800" x-text="firstname + ' ' + lastname"></h2>
                         <p class="text-slate-400 text-lg mt-1" x-text="email"></p>
+
+                        {{-- Image validation errors display nicely under profile text --}}
+                        @error('profile_picture')
+                            <p class="text-red-500 text-sm mt-2 font-semibold">⚠️ {{ $message }}</p>
+                        @enderror
                     </div>
                 </div>
 
@@ -59,12 +66,12 @@
                             <span>⚙️</span> Account Details
                         </h3>
 
-                        <form method="POST" action="{{ route('myprofile.update') }}" enctype="multipart/form-data">
+                        <form id="profileUpdateForm" method="POST" action="{{ route('myprofile.update') }}" enctype="multipart/form-data">
                             @csrf
                             @method('PUT')
 
-                            {{-- Hidden file input for avatar --}}
-                            <input type="file" name="profile_picture" accept="image/*" class="hidden" x-ref="avatarInput"
+                            {{-- Form containment ensures mobile Safari catches the payload stream --}}
+                            <input type="file" name="profile_picture" accept="image/jpeg,image/png,image/webp" class="hidden" x-ref="avatarInput"
                                    @change="
                                        const file = $event.target.files[0];
                                        if (file) {
