@@ -26,7 +26,7 @@ class MyProfileController extends Controller
             'lastname'  => 'required|string|max:255',
             'email'     => 'required|email|max:255|unique:users,email,' . Auth::id(),
             'bio'       => 'nullable|string|max:1000',
-            'profile_picture' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'profile_picture' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:7168', // Increased to 7MB for phone captures
         ]);
 
         $user = Auth::user();
