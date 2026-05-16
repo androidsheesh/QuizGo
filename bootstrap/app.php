@@ -18,6 +18,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'teacher'       => \App\Http\Middleware\EnsureTeacher::class,
             'prevent-back'  => \App\Http\Middleware\PreventBackHistory::class,
+            'session.token'  => \App\Http\Middleware\ValidateSessionToken::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

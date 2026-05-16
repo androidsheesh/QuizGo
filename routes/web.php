@@ -19,22 +19,23 @@ use App\Http\Controllers\TeacherQuizController;
 use App\Http\Controllers\WelcomeController;
 use App\Http\Controllers\TeacherSigninController;
 use App\Http\Controllers\AdminController;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 // ─── Public Routes (no auth) ───
 Route::get('/', [WelcomeController::class, 'show'])->name('welcome');
 
 Route::get('/signup', [SignupController::class, 'create']);
-Route::post('/signup', [SignupController::class, 'store'])->middleware('throttle:3,1');// prevent user or bots creating 1k or more account per minute or something
+Route::post('/signup', [SignupController::class, 'store'])->middleware('throttle:3,1');
 
-Route::get('/signin', [SigninController::class, 'create']);
+Route::get('/signin', [SigninController::class, 'create'])->name('signin');
 Route::post('/signin', [SigninController::class, 'store']);
 
 Route::get('/teacher/signin', [TeacherSigninController::class, 'create'])->name('teacher.signin');
 Route::post('/teacher/signin', [TeacherSigninController::class, 'store'])->name('teacher.signin.store');
 
 // ─── Student Routes ───
-Route::middleware(['auth', 'prevent-back'])->group(function () {
+Route::middleware(['auth', 'prevent-back', 'session.token'])->group(function () {
 
     Route::get('/home', [HomeController::class, 'show'])->name('home');
 
@@ -74,21 +75,37 @@ Route::middleware(['auth', 'prevent-back'])->group(function () {
     Route::get('/quiz/{assignment}/take', [StudentQuizController::class, 'take'])->name('student.quiz.take');
     Route::post('/quiz/{assignment}/submit', [StudentQuizController::class, 'submit'])->name('student.quiz.submit');
     Route::get('/quiz/results/{attempt}', [StudentQuizController::class, 'results'])->name('student.quiz.results');
+
+    // API
+    Route::get('/api/check-new-deck/{oldId}', function ($oldId) {
+        $newDeck = Auth::user()->decks()
+            ->where('id', '>', $oldId)
+            ->latest()
+            ->first();
+
+        return response()->json([
+            'is_ready' => (bool) $newDeck,
+            'deck_id'  => $newDeck?->id,
+        ]);
+    });
+
+    Route::get('/api/flashcards/status/{uuid}', FlashcardGenerationStatusController::class)
+        ->name('flashcards.status');
 });
 
 // ─── Admin Routes ───
-Route::middleware(['auth', 'prevent-back'])->prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth', 'prevent-back', 'session.token'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/', [AdminController::class, 'dashboard'])->name('dashboard');
     Route::post('/teachers', [AdminController::class, 'storeTeacher'])->name('teachers.store');
     Route::delete('/teachers/{teacher}', [AdminController::class, 'deleteTeacher'])->name('teachers.destroy');
 });
 
 // ─── Teacher Routes ───
-Route::middleware(['auth:web,teacher', 'prevent-back'])->group(function () {
+Route::middleware(['auth:web,teacher', 'prevent-back', 'session.token'])->group(function () {
     Route::get('/teacher-dashboard', [TeacherdashboardController::class, 'show'])->name('teacher.dashboard');
 });
 
-Route::middleware(['auth:web,teacher', 'teacher', 'prevent-back'])->prefix('teacher')->name('teacher.')->group(function () {
+Route::middleware(['auth:web,teacher', 'teacher', 'prevent-back', 'session.token'])->prefix('teacher')->name('teacher.')->group(function () {
 
     // Classrooms
     Route::post('/classrooms', [TeacherClassroomController::class, 'store'])->name('classroom.store');
@@ -104,7 +121,7 @@ Route::middleware(['auth:web,teacher', 'teacher', 'prevent-back'])->prefix('teac
     Route::post('/quizzes/assign', [TeacherQuizController::class, 'assign'])->name('quiz.assign');
     Route::delete('/quizzes/assignments/{assignment}', [TeacherQuizController::class, 'unassign'])->name('quiz.unassign');
 
-    // AI Quiz (keep before wildcard {quiz})
+    // AI Quiz
     Route::get('/quizzes/ai', [TeacherAiQuizController::class, 'showUpload'])->name('quiz.ai');
     Route::post('/quizzes/ai', [TeacherAiQuizController::class, 'generate'])->name('quiz.ai.generate');
     Route::post('/quizzes/ai/topic', [TeacherAiQuizController::class, 'generateFromTopic'])->name('quiz.ai.topic');
@@ -119,36 +136,19 @@ Route::middleware(['auth:web,teacher', 'teacher', 'prevent-back'])->prefix('teac
     Route::put('/profile', [TeacherprofileController::class, 'update'])->name('profile.update');
     Route::put('/profile/password', [TeacherprofileController::class, 'updatePassword'])->name('profile.password');
     Route::delete('/profile', [TeacherprofileController::class, 'destroy'])->name('profile.destroy');
+
+    // API
+    Route::get('/api/check-new-quiz/{oldId}', function ($oldId) {
+        $newQuiz = \App\Models\Quiz::where('teacher_id', Auth::id())
+            ->where('id', '>', $oldId)
+            ->latest()
+            ->first();
+
+        return response()->json([
+            'is_ready' => (bool) $newQuiz,
+            'quiz_id'  => $newQuiz?->id,
+        ]);
+    });
 });
-
-//acts as the "checker" that the frontend talks to while the user sees the loading screen.
-Route::get('/api/check-new-deck/{oldId}', function ($oldId) {
-    // Check if there is ANY deck created after the oldId for this user
-    $newDeck = Auth::user()->decks()
-        ->where('id', '>', $oldId)
-        ->latest()
-        ->first();
-
-    return response()->json([
-        'is_ready' => (bool) $newDeck,
-        'deck_id' => $newDeck?->id
-    ]);
-})->middleware('auth');
-
-Route::get('/api/flashcards/status/{uuid}', FlashcardGenerationStatusController::class)
-    ->middleware('auth')
-    ->name('flashcards.status');
-
-Route::get('/api/check-new-quiz/{oldId}', function ($oldId) {
-    $newQuiz = \App\Models\Quiz::where('teacher_id', Auth::id())
-        ->where('id', '>', $oldId)
-        ->latest()
-        ->first();
-
-    return response()->json([
-        'is_ready' => (bool) $newQuiz,
-        'quiz_id' => $newQuiz?->id
-    ]);
-})->middleware(['auth', 'teacher']);
 
 require __DIR__.'/auth.php';
