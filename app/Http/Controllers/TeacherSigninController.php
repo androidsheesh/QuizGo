@@ -2,11 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\AuthService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 
 class TeacherSigninController extends Controller
 {
+    public function __construct(private AuthService $authService)
+    {
+    }
+
     public function create()
     {
         return view('teacher-signin');
@@ -16,26 +20,19 @@ class TeacherSigninController extends Controller
     {
         $credentials = $request->validate([
             'email' => 'required|email',
-            'password' => 'required',
+            'password' => $request->boolean('confirm_other_device') ? 'nullable' : 'required',
         ]);
 
-        if (Auth::attempt($credentials)) {
-            $request->session()->regenerate();
+        $redirectUrl = $this->authService->attemptLogin($credentials, $request, ['teacher', 'admin']);
 
-            if (Auth::user()->role === 'teacher') {
-                return redirect()->route('teacher.dashboard');
-            } elseif (Auth::user()->role === 'admin') {
-                return redirect()->route('admin.dashboard');
-            }
+        if ($redirectUrl === 'confirm-other-device') {
+            return back()
+                ->withInput($request->only('email'))
+                ->with('confirm_other_device', true);
+        }
 
-            // If a student tries to log in here, reject them
-            Auth::logout();
-            $request->session()->invalidate();
-            $request->session()->regenerateToken();
-
-            return back()->withErrors([
-                'email' => 'You are not eligible to enter.',
-            ]);
+        if ($redirectUrl) {
+            return redirect()->to($redirectUrl);
         }
 
         return back()->withErrors([

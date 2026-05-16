@@ -25,15 +25,19 @@ class SigninController extends Controller
         // 1. Controller handles HTTP Validation
         $credentials = $request->validate([
             'email'    => 'required|email',
-            'password' => 'required',
+            'password' => $request->boolean('confirm_other_device') ? 'nullable' : 'required',
         ]);
 
         // 2. Ask the Service to attempt login and get the destination
-        $redirectUrl = $this->authService->attemptLogin($credentials);
+        $redirectUrl = $this->authService->attemptLogin($credentials, $request, ['student']);
 
         // 3. If successful, regenerate session and redirect
         if ($redirectUrl) {
-            $request->session()->regenerate();
+            if ($redirectUrl === 'confirm-other-device') {
+                return back()
+                    ->withInput($request->only('email'))
+                    ->with('confirm_other_device', true);
+            }
 
             return redirect()->to($redirectUrl);
         }
