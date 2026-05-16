@@ -14,7 +14,9 @@ class EnsureTeacher
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (!$request->user() || $request->user()->role !== 'teacher') {
+        $user = auth('teacher')->user() ?? auth('web')->user();
+
+        if (!$user || !$user->isTeacher()) {
             return redirect('/home')->with('error', 'Access denied. Teachers only.');
         }
 
