@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\DeckController;
+use App\Http\Controllers\FlashcardGenerationStatusController;
 use App\Http\Controllers\FlashcardController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\MyProfileController;
@@ -83,11 +84,11 @@ Route::middleware(['auth', 'prevent-back'])->prefix('admin')->name('admin.')->gr
 });
 
 // ─── Teacher Routes ───
-Route::middleware(['auth', 'prevent-back'])->group(function () {
+Route::middleware(['auth:web,teacher', 'prevent-back'])->group(function () {
     Route::get('/teacher-dashboard', [TeacherdashboardController::class, 'show'])->name('teacher.dashboard');
 });
 
-Route::middleware(['auth', 'teacher', 'prevent-back'])->prefix('teacher')->name('teacher.')->group(function () {
+Route::middleware(['auth:web,teacher', 'teacher', 'prevent-back'])->prefix('teacher')->name('teacher.')->group(function () {
 
     // Classrooms
     Route::post('/classrooms', [TeacherClassroomController::class, 'store'])->name('classroom.store');
@@ -133,6 +134,10 @@ Route::get('/api/check-new-deck/{oldId}', function ($oldId) {
         'deck_id' => $newDeck?->id
     ]);
 })->middleware('auth');
+
+Route::get('/api/flashcards/status/{uuid}', FlashcardGenerationStatusController::class)
+    ->middleware('auth')
+    ->name('flashcards.status');
 
 Route::get('/api/check-new-quiz/{oldId}', function ($oldId) {
     $newQuiz = \App\Models\Quiz::where('teacher_id', Auth::id())
