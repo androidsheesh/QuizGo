@@ -29,7 +29,9 @@ class TeacherQuizController extends Controller
             $query->where('title', 'like', '%' . $request->search . '%');
         }
 
-        $quizzes = $query->get();
+        // IMPLEMENTED: Swapped ->get() with ->paginate(9)
+        // Also used appends() so the search query parameter doesn't disappear when changing pages
+        $quizzes = $query->paginate(9)->appends($request->query());
 
         // FIX: Changed find() to where()
         $classrooms = Classroom::where('teacher_id', $teacher->id)->get();

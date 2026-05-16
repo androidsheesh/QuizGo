@@ -1,41 +1,27 @@
 <?php
-
 namespace App\Http\Controllers;
 
-use App\Models\Deck;
+use App\Services\DeckService;
+use App\Services\FlashcardGenerationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Cache;
-use App\Jobs\ProcessPdfFlashcards;
-use App\Jobs\ProcessTopicFlashcards;
-use App\Jobs\ProcessTextFlashcards;
 
 class HomeController extends Controller
 {
+    protected $deckService;
+    protected $generationService;
+
+    public function __construct(DeckService $deckService, FlashcardGenerationService $generationService)
+    {
+        $this->deckService = $deckService;
+        $this->generationService = $generationService;
+    }
+
     public function show()
     {
         $user = Auth::user();
 
-        if ($user) {
-            $cacheKey = "user_{$user->id}_latest_decks";
-
-            // 1. Get the data from Redis as a JSON string
-            $jsonDecks = Cache::remember($cacheKey, 1800, function () use ($user) {
-                return $user->decks()
-                    ->withCount('flashcards')
-                    ->latest()
-                    ->take(2)
-                    ->get()
-                    ->toJson();
-            });
-
-            // 2. Turn the JSON back into an array, then "Hydrate" it into Deck Models
-            $decksData = json_decode($jsonDecks, true);
-            $decks = Deck::hydrate($decksData);
-
-        } else {
-            $decks = collect();
-        }
+        $decks = $user ? $this->deckService->getLatestDecksForUser($user) : collect();
 
         return view('home', compact('user', 'decks'));
     }
@@ -47,25 +33,13 @@ class HomeController extends Controller
             'count' => 'nullable|integer|min:1|max:20',
         ]);
 
-        try {
-            $latestDeckId = Auth::user()->decks()->latest()->first()?->id ?? 0;
-            $topic = strtolower($request->topic);
-            $count = $request->input('count', 10);
+        $generation = $this->generationService->generateFromTopic(
+            Auth::id(),
+            $request->input('topic'),
+            $request->input('count', 10)
+        );
 
-            ProcessTopicFlashcards::dispatch(
-                auth()->id(),
-                $topic,
-                $count
-            );
-
-            return redirect()->route('mydecks')
-                ->with('success', 'Your topic is being processed in the background. You can move to another page while it finishes.')
-                ->with('waiting_for_deck', $latestDeckId);
-
-        } catch (\Exception $e) {
-            \Log::error("Topic Generation Error: " . $e->getMessage());
-            return back()->withErrors(['ai' => 'Failed to generate flashcards: ' . $e->getMessage()])->withInput();
-        }
+        return $this->buildRedirectResponse($generation, 'Your topic is being processed in the background. You can move to another page while it finishes.');
     }
 
     public function generateFromPdf(Request $request)
@@ -75,34 +49,15 @@ class HomeController extends Controller
             'count' => 'nullable|integer|min:1|max:20',
         ]);
 
-        try {
-            // Get the current latest deck ID before the new one is created
-            $latestDeckId = Auth::user()->decks()->latest()->first()?->id ?? 0;
+        $generation = $this->generationService->generateFromPdf(
+            Auth::id(),
+            $request->file('pdf'),
+            $request->input('count', 10)
+        );
 
-            $count = $request->input('count', 10);
-            $file = $request->file('pdf');
-            $originalTitle = $file->getClientOriginalName();
-            $fileName = time() . '_' . str_replace(' ', '_', $originalTitle);
-
-            $path = $file->storeAs('pdf_uploads', $fileName, 'local');
-            $fullPath = \Storage::disk('local')->path($path);
-
-            ProcessPdfFlashcards::dispatch(
-                auth()->id(),
-                $fullPath,
-                $count,
-                $originalTitle
-            );
-
-            return redirect()->route('mydecks')
-                ->with('success', 'Your PDF is being processed in the background. You can move to another page while it finishes.')
-                ->with('waiting_for_deck', $latestDeckId);
-
-        } catch (\Exception $e) {
-            \Log::error("PDF Upload Error: " . $e->getMessage());
-            return back()->withErrors(['ai' => 'Error: ' . $e->getMessage()]);
-        }
+        return $this->buildRedirectResponse($generation, 'Your PDF is being processed in the background. You can move to another page while it finishes.');
     }
+
     public function generateFromText(Request $request)
     {
         $request->validate([
@@ -110,22 +65,27 @@ class HomeController extends Controller
             'count' => 'nullable|integer|min:1|max:20',
         ]);
 
-        try {
-            $latestDeckId = Auth::user()->decks()->latest()->first()?->id ?? 0;
-            $count = $request->input('count', 10);
+        $generation = $this->generationService->generateFromText(
+            Auth::id(),
+            $request->input('text'),
+            $request->input('count', 10)
+        );
 
-            ProcessTextFlashcards::dispatch(
-                auth()->id(),
-                $request->text,
-                $count
-            );
+        return $this->buildRedirectResponse($generation, 'Your text is being processed in the background. You can move to another page while it finishes.');
+    }
 
-            return redirect()->route('mydecks')
-                ->with('success', 'Your text is being processed in the background. You can move to another page while it finishes.')
-                ->with('waiting_for_deck', $latestDeckId);
-        } catch (\Exception $e) {
-            \Log::error("Text Generation Error: " . $e->getMessage());
-            return back()->withErrors(['ai' => $e->getMessage()])->withInput();
+    /**
+     * Helper method to keep controller redirects DRY
+     */
+    protected function buildRedirectResponse($generation, string $successMessage)
+    {
+        $response = redirect()->route('mydecks')->with('flashcard_generation_id', $generation->uuid);
+
+        // If the generation didn't fail during dispatch, add the success message
+        if ($generation->status !== \App\Models\FlashcardGeneration::STATUS_FAILED) {
+            $response->with('success', $successMessage);
         }
+
+        return $response;
     }
 }

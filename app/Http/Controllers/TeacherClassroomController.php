@@ -3,163 +3,83 @@
 namespace App\Http\Controllers;
 
 use App\Models\Classroom;
-use App\Models\QuizAttempt;
 use App\Models\User;
+use App\Services\TeacherClassroomService;
+use App\Services\StudentClassroomService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Gate;
 
 class TeacherClassroomController extends Controller
 {
-    /**
-     * Show classroom detail with students, scores, and rankings.
-     */
-    public function show(Classroom $classroom)
-    {
-        $this->authorizeTeacher($classroom);
+    protected $teacherService;
+    protected $studentService;
 
-        // Fixed typo: 'quizAssignmnets' -> 'quizAssignments'
-        $classroom->load(['students', 'quizAssignments.quiz', 'quizAssignments.attempts.student']);
-
-        // 1. Get all IDs needed
-        $assignmentIds = $classroom->quizAssignments->pluck('id');
-        $studentIds = $classroom->students->pluck('id');
-
-        // 2. Fetch all attempts in ONE query and group them by student_id
-        // FIX: Changed find() to whereIn()
-        $allAttempts = QuizAttempt::whereIn('student_id', $studentIds)
-            ->whereIn('quiz_assignment_id', $assignmentIds)
-            ->get()
-            ->groupBy('student_id');
-
-        // 3. Build student's rankings
-        $studentRankings = collect();
-
-        foreach ($classroom->students as $student) {
-            // Pull the student's attempts from the grouped collection we just created
-            $attempts = $allAttempts->get($student->id, collect());
-
-            $bestScore  = $attempts->max('score') ?? 0;
-            $totalScore = $attempts->sum('score');
-            $totalQuestions = $attempts->sum('total_questions');
-            $avgScore   = $totalQuestions > 0 ? round(($totalScore / $totalQuestions) * 100, 1) : 0;
-            $bestTime   = $attempts->min('time_taken') ?? 0;
-            $totalTime  = $attempts->sum('time_taken') ?? 0;
-            $attemptCount = $attempts->count();
-
-            $studentRankings->push([
-                'student'       => $student,
-                'best_score'    => $bestScore,
-                'avg_score'     => $avgScore,
-                'best_time'     => $bestTime,
-                'total_time'    => $totalTime,
-                'attempt_count' => $attemptCount,
-            ]);
-        }
-
-        // Sort: highest score DESC, then shortest time ASC
-        $studentRankings = $studentRankings
-            ->sortBy([
-                ['best_score', 'desc'],
-                ['best_time', 'asc'],
-            ])
-            ->values();
-
-        return view('teacher.classroom-detail', [
-            'classroom'       => $classroom,
-            'studentRankings' => $studentRankings,
-        ]);
+    // Inject BOTH services here
+    public function __construct(
+        TeacherClassroomService $teacherService,
+        StudentClassroomService $studentService
+    ) {
+        $this->teacherService = $teacherService;
+        $this->studentService = $studentService;
     }
 
-    /**
-     * Create a new classroom.
-     */
+    public function show(Classroom $classroom)
+    {
+        // 1. Check the Policy (Throws a 403 automatically if they aren't the owner)
+        Gate::authorize('manage', $classroom);
+
+        // 2. Reuse the ranking logic from your Student Service!
+        $studentRankings = $this->studentService->calculateClassRankings($classroom);
+
+        return view('teacher.classroom-detail', compact('classroom', 'studentRankings'));
+    }
+
     public function store(Request $request)
     {
+        // Note: No policy check needed here since they are creating a NEW classroom
         $validated = $request->validate([
             'name'        => 'required|string|max:255',
             'description' => 'nullable|string|max:500',
         ]);
 
-        // Generate a unique 6-character code
-        do {
-            $code = strtoupper(Str::random(6));
-        // FIX: Changed find() to where()
-        } while (Classroom::where('code', $code)->exists());
+        $result = $this->teacherService->createClassroom(Auth::id(), $validated);
 
-        Classroom::create([
-            'teacher_id'  => Auth::id(),
-            'name'        => $validated['name'],
-            'code'        => $code,
-            'description' => $validated['description'] ?? null,
-        ]);
-
-        return back()->with('success', 'Classroom "' . $validated['name'] . '" created! Code: ' . $code);
+        return back()->with('success', 'Classroom "' . $validated['name'] . '" created! Code: ' . $result['code']);
     }
 
-    /**
-     * Add a student to a classroom by email.
-     */
     public function addStudent(Request $request, Classroom $classroom)
     {
-        $this->authorizeTeacher($classroom);
+        Gate::authorize('manage', $classroom);
 
         $validated = $request->validate([
             'email' => 'required|email|exists:users,email',
         ]);
 
-        // Excellent use of firstWhere!
-        $student = User::firstWhere([
-            'email' => $validated['email'],
-            'role'  => 'student',
-        ]);
+        $result = $this->teacherService->addStudentByEmail($classroom, $validated['email']);
 
-        if (!$student) {
-            return back()->withErrors(['email' => 'No student found with that email.']);
+        if (!$result['success']) {
+            return back()->withErrors(['email' => $result['error']]);
         }
 
-        if ($classroom->students()->where('student_id', $student->id)->exists()) {
-            return back()->withErrors(['email' => 'This student is already in this class.']);
-        }
-
-        $classroom->students()->attach($student->id);
-
-        return back()->with('success', $student->firstname . ' ' . $student->lastname . ' added to ' . $classroom->name . '!');
+        return back()->with('success', $result['message']);
     }
 
-    /**
-     * Remove a student from a classroom.
-     */
     public function removeStudent(Classroom $classroom, User $user)
     {
-        $this->authorizeTeacher($classroom);
+        Gate::authorize('manage', $classroom);
 
-        $classroom->students()->detach($user->id);
+        $this->teacherService->removeStudent($classroom, $user);
 
         return back()->with('success', 'Student removed from class.');
     }
 
-    /**
-     * Delete a classroom.
-     */
     public function destroy(Classroom $classroom)
     {
-        $this->authorizeTeacher($classroom);
+        Gate::authorize('manage', $classroom);
 
-        // FIX: Removed the model variable from inside the delete method
-        $classroom->delete();
+        $this->teacherService->deleteClassroom($classroom);
 
-        return redirect()->route('teacher.dashboard')
-            ->with('success', 'Classroom deleted.');
-    }
-
-    /**
-     * Ensure the authenticated teacher owns this classroom.
-     */
-    private function authorizeTeacher(Classroom $classroom): void
-    {
-        if ($classroom->teacher_id !== Auth::id()) {
-            abort(403);
-        }
+        return redirect()->route('teacher.dashboard')->with('success', 'Classroom deleted.');
     }
 }
