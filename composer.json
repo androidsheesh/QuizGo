@@ -12,8 +12,10 @@
         "php": "^8.3",
         "google-gemini-php/laravel": "^2.0",
         "laravel/framework": "^13.0",
+        "laravel/reverb": "*",
         "laravel/tinker": "^3.0",
         "predis/predis": "^3.4",
+        "pusher/pusher-php-server": "*",
         "thiagoalessio/tesseract_ocr": "^2.13"
     },
     "require-dev": {
