@@ -6,8 +6,8 @@
 
             <div class="max-w-4xl mx-auto flex flex-col">
 
-                {{-- Back Link --}}
-                <a href="{{ route('student.classroom.show', $attempt->quizAssignment->classroom_id) }}" class="inline-flex items-center text-slate-400 hover:text-slate-600 transition-colors mb-8 text-sm font-medium">
+                {{-- Back Link - Added mt-12 for mobile to push below the burger menu --}}
+                <a href="{{ route('student.classroom.show', $attempt->quizAssignment->classroom_id) }}" class="inline-flex items-center text-slate-400 hover:text-slate-600 transition-colors mt-12 md:mt-0 mb-8 text-sm font-medium">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
                     Back to Class
                 </a>

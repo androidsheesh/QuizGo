@@ -1,4 +1,5 @@
 <x-layout>
+
     <div class="flex min-h-screen bg-[#F9FAFB]">
 
         <x-sidebar/>
@@ -6,7 +7,7 @@
         <main class="flex-1 p-6 md:p-12 overflow-y-auto relative">
             <x-dropdown-profile/>
 
-            <div class="max-w-5xl mx-auto flex flex-col">
+            <div class="max-w-5xl mx-auto flex flex-col mt-16 lg:mt-0">
 
                 {{-- Back Button --}}
                 <a href="{{ route('student.assignments') }}" class="inline-flex items-center text-slate-400 hover:text-slate-600 transition-colors mb-6 text-sm font-medium">

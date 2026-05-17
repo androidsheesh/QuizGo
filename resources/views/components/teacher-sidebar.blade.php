@@ -22,12 +22,10 @@
     id="mobile-teacher-sidebar"
     class="fixed lg:sticky top-0 left-0 h-screen w-72 lg:w-64 bg-white border-r border-slate-100 flex flex-col z-50 transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out"
 >
-    {{-- Logo Section --}}
-    <div class="p-6 lg:p-8 mb-4 flex items-center justify-between lg:justify-start">
-        <a href="{{ route('teacher.dashboard') }}" class="flex items-center gap-3 group">
-            <div class="w-10 h-10 bg-indigo-500 rounded-xl flex items-center justify-center shadow-[0_4px_0_0_#4338ca] group-hover:scale-105 transition-transform">
-                <div class="w-4 h-4 bg-white rounded-sm rotate-45"></div>
-            </div>
+{{-- Logo Section --}}
+    <div class="p-4 lg:p-5 mb-4 flex items-center justify-between lg:justify-start">
+        <a href="{{ route('teacher.dashboard') }}" class="flex items-center gap-1 group ml-3">
+            <x-logo class="w-10 h-10 md:w-12 md:h-12"/>
             <span class="block text-slate-900 font-black text-2xl tracking-tighter">QuizGo</span>
         </a>
 
