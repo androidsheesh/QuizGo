@@ -20,6 +20,7 @@ class QuizAttempt extends Model
         'score',
         'total_questions',
         'time_taken',
+        'violations',
         'started_at',
         'completed_at',
     ];
