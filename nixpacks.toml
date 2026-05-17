@@ -1,5 +1,2 @@
-[providers]
-php = {}
-
 [start]
 cmd = "php artisan queue:work --tries=3"
