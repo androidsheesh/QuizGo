@@ -1,10 +1,12 @@
 <?php
 namespace App\Http\Controllers;
 
+use App\Services\AuthService;
 use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+
 class SignupController extends Controller
 {
     // Displays the form
@@ -14,7 +16,7 @@ class SignupController extends Controller
     }
 
     // Handles the form submission
-    public function store(Request $request)
+    public function store(Request $request, AuthService $authService)
     {
         // 1. Validate the incoming data
         $validatedData = $request->validate([
@@ -32,14 +34,15 @@ class SignupController extends Controller
             'password'  => Hash::make($validatedData['password']),
         ]);
 
-        // 3. Log the user in
+        // 3. Log the user in and issue a session token so the
+        //    ValidateSessionToken middleware doesn't immediately kick them out.
         Auth::login($user);
+        $authService->issueSessionToken($user, $request);
 
         // Redis-backed sessions to store a quick flash message
         $request->session()->flash('status', 'Welcome to QuizGo, {$user->firstname}!');
 
         // after signing up, it will redirect directly to the dashboard page
         return redirect('home');
-
     }
 }

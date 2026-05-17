@@ -71,7 +71,8 @@ class StudentQuizController extends Controller
             $assignment,
             $student,
             $request->input('answers', []),
-            $request->input('time_taken', 0)
+            $request->input('time_taken', 0),
+            (int) $request->input('violations', 0)
         );
 
         // 4. Return the HTTP Redirect
