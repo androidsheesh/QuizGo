@@ -15,6 +15,8 @@ return Application::configure(basePath: dirname(__DIR__))
         ['middleware' => ['web', 'auth:web,teacher']],
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->trustProxies(at: '*');
+
         $middleware->alias([
             'teacher'       => \App\Http\Middleware\EnsureTeacher::class,
             'prevent-back'  => \App\Http\Middleware\PreventBackHistory::class,
