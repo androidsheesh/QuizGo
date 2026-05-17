@@ -23,7 +23,7 @@ class StudentQuizService
     /**
      * Grade the student's answers, save the attempt, and return the record.
      */
-    public function gradeAndSubmitQuiz(QuizAssignment $assignment, User $student, array $answers, int $timeTaken): QuizAttempt
+    public function gradeAndSubmitQuiz(QuizAssignment $assignment, User $student, array $answers, int $timeTaken, int $violations = 0): QuizAttempt
     {
         $quiz = $assignment->quiz;
         $quiz->load('questions');
@@ -34,6 +34,7 @@ class StudentQuizService
             'score'              => 0, // Placeholder, calculated below
             'total_questions'    => $quiz->questions->count(),
             'time_taken'         => $timeTaken,
+            'violations'         => $violations,
             'started_at'         => now()->subSeconds($timeTaken),
             'completed_at'       => now(),
         ]);

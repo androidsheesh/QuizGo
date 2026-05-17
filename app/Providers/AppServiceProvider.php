@@ -31,7 +31,6 @@ class AppServiceProvider extends ServiceProvider
         QuizAssignment::observe(QuizAssignmentObserver::class);
 
         View::composer('components.sidebar', function ($view) {
-            // Increase the limit or remove it entirely if you want ALL decks
             $decks = Auth::check()
                 ? Auth::user()->decks()->latest()->take(15)->get()
                 : collect();
