@@ -25,6 +25,15 @@ use Illuminate\Support\Facades\Route;
 // ─── Public Routes (no auth) ───
 Route::get('/', [WelcomeController::class, 'show'])->name('welcome');
 
+Route::get('/favicon.svg', function () {
+    // Render the raw SVG component, NOT the wrapper!
+    $svg = Blade::render('<x-logo-svg />');
+
+    return response($svg)
+        ->header('Content-Type', 'image/svg+xml')
+        ->header('Cache-Control', 'public, max-age=31536000');
+});
+
 Route::get('/signup', [SignupController::class, 'create']);
 Route::post('/signup', [SignupController::class, 'store'])->middleware('throttle:3,1');
 

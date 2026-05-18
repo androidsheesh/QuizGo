@@ -16,6 +16,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded" rel="stylesheet">
 
+    <link rel="icon" type="image/png" href="{{ asset('favicon.png') }}">
+
     <style>[x-cloak] { display: none !important; }</style>
     @php
         $broadcastUser = auth('teacher')->user() ?? auth('web')->user();

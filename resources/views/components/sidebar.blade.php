@@ -24,9 +24,10 @@
 >
     {{-- Logo Section inside the sidebar --}}
     <div class="p-4 lg:p-5 mb-4 flex items-center justify-between lg:justify-start">
-        <a href="{{ route('home') }}" class="flex items-center gap-1 group ml-3">
-            <x-logo class="w-10 h-10 md:w-12 md:h-12"/>
-            <span class="block text-slate-900 font-black text-2xl tracking-tighter">QuizGo</span>
+
+        <a href="{{ route('home') }}" class="logo relative bg-transparent text-black font-black text-2xl tracking-tight flex items-center z-[60]">
+            <x-logo class="w-20 h-20 md:w-30 md:h-30 -my-6 md:-my-12" />
+            <h1 class="-ml-2 md:-ml-4">QuizGo</h1>
         </a>
 
         <button

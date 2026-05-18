@@ -29,9 +29,9 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         // Force HTTPS URL generation in production/tunnel environments
-        if (config('app.env') === 'production' || env('APP_URL') !== 'http://localhost') {
-            URL::forceScheme('https');
-        }
+        // if (config('app.env') === 'production' || env('APP_URL') !== 'http://localhost') {
+        //     URL::forceScheme('https');
+        // }
 
         Quiz::observe(QuizObserver::class);
         Classroom::observe(ClassroomObserver::class);
