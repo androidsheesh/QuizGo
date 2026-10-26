@@ -51,10 +51,10 @@
 
                     <script>
                         document.addEventListener('DOMContentLoaded', function() {
-                            const oldId = "{{ session('waiting_for_quiz') }}";
+                            const checkUrl = @json(route('teacher.api.check-new-quiz', ['oldId' => (int) session('waiting_for_quiz')]));
 
                             const checkInterval = setInterval(() => {
-                                fetch(`/api/check-new-quiz/${oldId}`)
+                                fetch(checkUrl)
                                     .then(response => response.json())
                                     .then(data => {
                                         if (data.is_ready) {

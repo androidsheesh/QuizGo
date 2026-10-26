@@ -22,6 +22,11 @@
                         ℹ️ {{ session('info') }}
                     </div>
                 @endif
+                @if(session('error'))
+                    <div class="bg-red-50 border border-red-200 text-red-700 px-6 py-3 rounded-2xl mb-8 font-medium text-sm">
+                        ⚠️ {{ session('error') }}
+                    </div>
+                @endif
 
                 {{-- Results Header Card --}}
                 <div class="bg-white rounded-[2rem] border border-gray-100 p-8 shadow-sm mb-10 overflow-hidden relative">

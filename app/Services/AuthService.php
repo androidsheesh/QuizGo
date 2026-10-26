@@ -7,10 +7,11 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
-use App\Events\UserLoggedInElsewhere;
 
 class AuthService
 {
+    private const PENDING_LOGIN_TTL_SECONDS = 300;
+
     /**
      * Attempt to authenticate the user.
      * Returns the redirect URL if successful, or null if it fails.
@@ -18,7 +19,17 @@ class AuthService
     public function attemptLogin(array $credentials, Request $request, ?array $allowedRoles = null): ?string
     {
         if ($request->boolean('confirm_other_device')) {
-            $user = User::find($request->session()->get('pending_login_user_id'));
+            // Single use: the pending login is consumed whether or not the confirmation succeeds
+            $pendingUserId = $request->session()->pull('pending_login_user_id');
+            $pendingAt = (int) $request->session()->pull('pending_login_at', 0);
+
+            if (! $pendingUserId || now()->timestamp - $pendingAt > self::PENDING_LOGIN_TTL_SECONDS) {
+                $request->session()->forget('pending_login_remember');
+
+                return null;
+            }
+
+            $user = User::find($pendingUserId);
 
             if (! $user || ($credentials['email'] ?? null) !== $user->email) {
                 return null;
@@ -43,31 +54,21 @@ class AuthService
 
         if ($this->hasActiveSession($user) && ! $request->boolean('confirm_other_device')) {
             $request->session()->put('pending_login_user_id', $user->id);
+            $request->session()->put('pending_login_at', now()->timestamp);
             $request->session()->put('pending_login_remember', $request->boolean('remember'));
 
             return 'confirm-other-device';
         }
 
         return $this->loginUser($user, $request);
-
-            if (Auth::attempt($credentials)) {
-        /** @var User $user */
-        $user = Auth::user();
-
-        // Notify any existing session on another device
-        UserLoggedInElsewhere::dispatch($user->id);
-
-        // Generate and store new session token
-        $token = Str::random(60);
-        $user->session_token = $token;
-        $user->save();
-
-        session(['session_token' => $token]);
-
-        return $this->determineRedirectRoute($user);
     }
 
-    return null;
+    /**
+     * Drop an unconfirmed "sign in on this device?" login, e.g. when the sign-in page is reloaded.
+     */
+    public function clearPendingLogin(Request $request): void
+    {
+        $request->session()->forget(['pending_login_user_id', 'pending_login_at', 'pending_login_remember']);
     }
 
     public function loginUser(User $user, Request $request): string

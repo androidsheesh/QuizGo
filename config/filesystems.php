@@ -17,6 +17,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Uploads Disk
+    |--------------------------------------------------------------------------
+    |
+    | Where PDF/TXT uploads wait for the queue worker. Use a shared disk such
+    | as "s3" when the worker doesn't run in the same container as the web app.
+    |
+    */
+
+    'uploads_disk' => env('UPLOADS_DISK', 'local'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Filesystem Disks
     |--------------------------------------------------------------------------
     |

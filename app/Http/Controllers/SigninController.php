@@ -15,8 +15,12 @@ class SigninController extends Controller
         $this->authService = $authService;
     }
 
-    public function create()
+    public function create(Request $request)
     {
+        if (! $request->session()->has('confirm_other_device')) {
+            $this->authService->clearPendingLogin($request);
+        }
+
         return view('signin');
     }
 

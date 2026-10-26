@@ -5,9 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\Classroom;
 use App\Models\Quiz;
 use App\Models\QuizAssignment;
-use App\Models\QuizQuestion;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class TeacherQuizController extends Controller
 {
@@ -61,40 +62,68 @@ class TeacherQuizController extends Controller
             'time_limit'               => 'nullable|integer|min:1|max:180',
             'questions'                => 'required|array|min:1',
             'questions.*.type'         => 'required|in:multiple_choice,identification',
-            'questions.*.question'     => 'required|string',
-            'questions.*.correct_answer' => 'nullable|string',
-            'questions.*.correct_choice_index' => 'nullable|integer',
-            'questions.*.choices'      => 'nullable|array',
-            'questions.*.choices.*'    => 'nullable|string',
+            'questions.*.question'     => 'required|string|max:2000',
+            'questions.*.correct_answer' => 'nullable|string|max:255',
+            'questions.*.correct_choice_index' => 'nullable|integer|min:0',
+            'questions.*.choices'      => 'nullable|array|max:10',
+            'questions.*.choices.*'    => 'nullable|string|max:255',
         ]);
 
-        $quiz = Quiz::create([
-            'teacher_id'  => Auth::id(),
-            'title'       => $validated['title'],
-            'description' => $validated['description'] ?? null,
-            'time_limit'  => $validated['time_limit'] ?? null,
-            'is_active'   => true,
-        ]);
+        // Resolve every question's answer before saving anything, so a quiz is never
+        // stored with a question that no student can get right
+        $questions = [];
+        $errors = [];
 
         foreach ($validated['questions'] as $index => $questionData) {
-            // For MC questions, resolve the correct answer from the selected choice index
-            $correctAnswer = $questionData['correct_answer'] ?? '';
-            if ($questionData['type'] === 'multiple_choice' && isset($questionData['correct_choice_index'])) {
-                $choices = $questionData['choices'] ?? [];
-                $correctAnswer = $choices[$questionData['correct_choice_index']] ?? $correctAnswer;
+            $correctAnswer = trim($questionData['correct_answer'] ?? '');
+            $choices = null;
+
+            if ($questionData['type'] === 'multiple_choice') {
+                $rawChoices = $questionData['choices'] ?? [];
+
+                // Resolve from the selected index before blank choices are dropped and indexes shift
+                if (isset($questionData['correct_choice_index'])) {
+                    $correctAnswer = trim($rawChoices[$questionData['correct_choice_index']] ?? '');
+                }
+
+                $choices = array_values(array_filter(
+                    array_map(fn ($choice) => trim((string) $choice), $rawChoices),
+                    fn ($choice) => $choice !== ''
+                ));
+
+                if (count($choices) < 2) {
+                    $errors["questions.$index.choices"] = 'Question '.($index + 1).' needs at least two choices.';
+                } elseif ($correctAnswer === '' || ! in_array($correctAnswer, $choices, true)) {
+                    $errors["questions.$index.correct_choice_index"] = 'Question '.($index + 1).' needs a correct answer selected from its choices.';
+                }
+            } elseif ($correctAnswer === '') {
+                $errors["questions.$index.correct_answer"] = 'Question '.($index + 1).' needs a correct answer.';
             }
 
-            QuizQuestion::create([
-                'quiz_id'        => $quiz->id,
+            $questions[] = [
                 'type'           => $questionData['type'],
                 'question'       => $questionData['question'],
                 'correct_answer' => $correctAnswer,
-                'choices'        => $questionData['type'] === 'multiple_choice'
-                    ? ($questionData['choices'] ?? [])
-                    : null,
+                'choices'        => $choices,
                 'order'          => $index,
-            ]);
+            ];
         }
+
+        if ($errors) {
+            throw ValidationException::withMessages($errors);
+        }
+
+        DB::transaction(function () use ($validated, $questions) {
+            $quiz = Quiz::create([
+                'teacher_id'  => Auth::id(),
+                'title'       => $validated['title'],
+                'description' => $validated['description'] ?? null,
+                'time_limit'  => $validated['time_limit'] ?? null,
+                'is_active'   => true,
+            ]);
+
+            $quiz->questions()->createMany($questions);
+        });
 
         return redirect()->route('teacher.quiz.index')
             ->with('success', 'Quiz created successfully!');

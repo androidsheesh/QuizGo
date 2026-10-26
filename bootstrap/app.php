@@ -17,6 +17,10 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->trustProxies(at: '*');
 
+        $middleware->redirectGuestsTo(fn ($request) => $request->is('teacher*')
+            ? route('teacher.signin')
+            : route('signin'));
+
         $middleware->alias([
             'teacher'       => \App\Http\Middleware\EnsureTeacher::class,
             'prevent-back'  => \App\Http\Middleware\PreventBackHistory::class,

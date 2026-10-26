@@ -43,10 +43,15 @@ class QuizAssignment extends Model
     }
 
     /**
-     * Student attempts on this assignment.
+     * Submitted student attempts on this assignment (in-progress attempts are excluded).
      */
     public function attempts(): HasMany
     {
-        return $this->hasMany(QuizAttempt::class);
+        return $this->hasMany(QuizAttempt::class)->whereNotNull('completed_at');
+    }
+
+    public function isPastDue(): bool
+    {
+        return $this->due_at !== null && $this->due_at->isPast();
     }
 }

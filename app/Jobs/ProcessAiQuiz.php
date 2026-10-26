@@ -6,13 +6,13 @@ use App\Events\TeacherNotificationReceived;
 use App\Models\Quiz;
 use App\Models\QuizQuestion;
 use App\Services\GeminiServices;
+use App\Services\UploadStorage;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
@@ -39,14 +39,11 @@ class ProcessAiQuiz implements ShouldQueue
         $this->title = $title;
     }
 
-    public function handle(GeminiServices $gemini)
+    public function handle(GeminiServices $gemini, UploadStorage $uploads)
     {
         try {
-            $questions = $this->generateQuestions($gemini);
-
-            if (empty($questions) || !is_array($questions)) {
-                throw new \Exception("Gemini returned empty or invalid data.");
-            }
+            // Normalizing again covers results cached before validation was added
+            $questions = $gemini->normalizeQuizQuestions($this->generateQuestions($gemini, $uploads));
 
             $quiz = null;
 
@@ -61,17 +58,16 @@ class ProcessAiQuiz implements ShouldQueue
                 foreach ($questions as $index => $q) {
                     QuizQuestion::create([
                         'quiz_id'        => $quiz->id,
-                        'type'           => $q['type'] ?? 'multiple_choice',
-                        'question'       => $q['question'] ?? 'No Question',
-                        'correct_answer' => $q['correct_answer'] ?? '',
-                        'choices'        => $q['choices'] ?? [],
+                        'type'           => $q['type'],
+                        'question'       => $q['question'],
+                        'correct_answer' => $q['correct_answer'],
+                        'choices'        => $q['choices'],
                         'order'          => $index,
                     ]);
                 }
             });
 
             Cache::forget("teacher_{$this->teacherId}_latest_quizzes");
-            $this->deleteStoredFile();
 
             // ─── Broadcast success notification to the teacher ───────────────────
             $quizUrl = $quiz ? route('teacher.quiz.show', $quiz->id) : null;
@@ -87,8 +83,9 @@ class ProcessAiQuiz implements ShouldQueue
 
         } catch (Throwable $e) {
             Log::error('AI Quiz Processing Failed: ' . $e->getMessage());
-            $this->deleteStoredFile();
             throw $e;
+        } finally {
+            $this->deleteStoredFile($uploads);
         }
     }
 
@@ -107,27 +104,23 @@ class ProcessAiQuiz implements ShouldQueue
         );
     }
 
-    private function generateQuestions(GeminiServices $gemini): array
+    private function generateQuestions(GeminiServices $gemini, UploadStorage $uploads): array
     {
+        // For pdf/txt, $source is a path relative to the uploads disk
         if ($this->sourceType === 'pdf') {
-            if (!File::exists($this->source)) {
-                throw new \Exception("Uploaded PDF file was not found.");
-            }
+            return $uploads->withLocalPath($this->source, function (string $localPath) use ($gemini) {
+                $cacheKey = 'quiz_pdf_'.md5_file($localPath)."_{$this->count}";
 
-            $fileHash = md5_file($this->source);
-            $cacheKey = "quiz_pdf_{$fileHash}_{$this->count}";
-
-            return Cache::remember($cacheKey, 86400, function () use ($gemini) {
-                return $gemini->generateQuizFromPdf($this->source, $this->count);
+                return Cache::remember($cacheKey, 86400, function () use ($gemini, $localPath) {
+                    return $gemini->generateQuizFromPdf($localPath, $this->count);
+                });
             });
         }
 
         if ($this->sourceType === 'txt') {
-            if (!File::exists($this->source)) {
-                throw new \Exception("Uploaded text file was not found.");
-            }
-
-            return $gemini->generateQuizFromText(file_get_contents($this->source) ?: '', $this->count);
+            return $uploads->withLocalPath($this->source, function (string $localPath) use ($gemini) {
+                return $gemini->generateQuizFromText(file_get_contents($localPath) ?: '', $this->count);
+            });
         }
 
         if ($this->sourceType === 'topic') {
@@ -137,10 +130,10 @@ class ProcessAiQuiz implements ShouldQueue
         return $gemini->generateQuizFromText($this->source, $this->count);
     }
 
-    private function deleteStoredFile(): void
+    private function deleteStoredFile(UploadStorage $uploads): void
     {
-        if (in_array($this->sourceType, ['pdf', 'txt'], true) && File::exists($this->source)) {
-            File::delete($this->source);
+        if (in_array($this->sourceType, ['pdf', 'txt'], true)) {
+            $uploads->delete($this->source);
         }
     }
 }

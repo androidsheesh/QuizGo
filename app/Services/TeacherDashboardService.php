@@ -27,7 +27,7 @@ class TeacherDashboardService
             ->where('classrooms.teacher_id', $teacher->id)
             ->count();
 
-        $avgScore = QuizAttempt::whereHas('quizAssignment', function ($q) use ($teacher) {
+        $avgScore = QuizAttempt::completed()->whereHas('quizAssignment', function ($q) use ($teacher) {
             $q->whereHas('quiz', fn($qq) => $qq->where('teacher_id', $teacher->id));
         })->avg('score');
 

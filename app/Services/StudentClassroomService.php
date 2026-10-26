@@ -73,7 +73,8 @@ class StudentClassroomService
         $assignmentIds = $classroom->quizAssignments->pluck('id');
         $studentIds = $classroom->students->pluck('id');
 
-        $allAttempts = QuizAttempt::whereIn('student_id', $studentIds)
+        $allAttempts = QuizAttempt::completed()
+            ->whereIn('student_id', $studentIds)
             ->whereIn('quiz_assignment_id', $assignmentIds)
             ->get()
             ->groupBy('student_id');
