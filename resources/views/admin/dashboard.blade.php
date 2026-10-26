@@ -28,6 +28,14 @@
                 </div>
             @endif
 
+            @if(session('new_teacher_credentials'))
+                <div class="col-span-full bg-amber-50 text-amber-800 border border-amber-200 px-6 py-4 rounded-2xl shadow-sm">
+                    <p class="font-bold text-sm mb-2">Share these login details with the teacher now. The password won't be shown again.</p>
+                    <p class="font-mono text-sm">Email: {{ session('new_teacher_credentials')['email'] }}</p>
+                    <p class="font-mono text-sm">Password: {{ session('new_teacher_credentials')['password'] }}</p>
+                </div>
+            @endif
+
             {{-- Left Column: Create Teacher Form --}}
             <div class="lg:col-span-1 space-y-6">
                 <div class="bg-white border border-gray-200 rounded-[2rem] p-8 shadow-sm">
@@ -86,8 +94,7 @@
                                      @click="selectedTeacher = {
                                         id: {{ $teacher->id }},
                                         name: '{{ addslashes($teacher->firstname . ' ' . $teacher->lastname) }}',
-                                        email: '{{ addslashes($teacher->initial_email ?? $teacher->email) }}',
-                                        password: '{{ addslashes($teacher->initial_password ?? 'Not Available') }}',
+                                        email: '{{ addslashes($teacher->email) }}',
                                         avatar: '{{ $teacher->profile_picture ? asset('storage/' . $teacher->profile_picture) : '' }}',
                                         created: '{{ $teacher->created_at->format('M d, Y') }}'
                                      }">
@@ -101,7 +108,7 @@
                                         </div>
                                         <div>
                                             <h3 class="font-bold text-slate-800">{{ $teacher->firstname }} {{ $teacher->lastname }}</h3>
-                                            <p class="text-xs text-slate-500">{{ $teacher->initial_email ?? $teacher->email }} &bull; Added {{ $teacher->created_at->format('M d, Y') }}</p>
+                                            <p class="text-xs text-slate-500">{{ $teacher->email }} &bull; Added {{ $teacher->created_at->format('M d, Y') }}</p>
                                         </div>
                                     </div>
                                     <form action="{{ route('admin.teachers.destroy', $teacher) }}" method="POST" onsubmit="return confirm('Delete this teacher account permanently?');" class="shrink-0 ml-4">
@@ -142,15 +149,9 @@
 
                     <div class="space-y-5">
                         <div class="bg-slate-50 rounded-2xl p-4 border border-slate-100">
-                            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Original Email Address</label>
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Email Address</label>
                             <div class="flex items-center justify-between">
                                 <p class="text-slate-700 font-mono font-bold text-lg" x-text="selectedTeacher?.email"></p>
-                            </div>
-                        </div>
-                        <div class="bg-slate-50 rounded-2xl p-4 border border-slate-100">
-                            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Original Password</label>
-                            <div class="flex items-center justify-between">
-                                <p class="text-slate-700 font-mono font-bold text-lg" x-text="selectedTeacher?.password"></p>
                             </div>
                         </div>
                         <div class="bg-slate-50 rounded-2xl p-4 border border-slate-100">

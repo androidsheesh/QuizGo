@@ -40,12 +40,16 @@ class AdminController extends Controller
             'lastname' => $request->lastname,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'initial_email' => $request->email,
-            'initial_password' => $request->password,
             'role' => 'teacher',
         ]);
 
-        return redirect()->route('admin.dashboard')->with('success', 'Teacher account created successfully.');
+        // Credentials are flashed once so the admin can share them; the plain password is never stored
+        return redirect()->route('admin.dashboard')
+            ->with('success', 'Teacher account created successfully.')
+            ->with('new_teacher_credentials', [
+                'email' => $request->email,
+                'password' => $request->password,
+            ]);
     }
 
     public function deleteTeacher(User $teacher)
