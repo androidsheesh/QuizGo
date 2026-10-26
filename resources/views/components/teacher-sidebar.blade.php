@@ -57,10 +57,6 @@
             </p>
             <div class="space-y-1 h-[200px] overflow-y-auto overflow-x-hidden px-2 custom-sidebar-scroll">
 
-                @php
-                    $sidebarClassrooms = \App\Models\Classroom::where('teacher_id', auth()->id())->get();
-                @endphp
-
                 @forelse($sidebarClassrooms as $classroom)
                     <a href="{{ route('teacher.classroom.show', $classroom->id) }}"
                        class="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 group transition-all duration-200">

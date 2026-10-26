@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\Role;
 use App\Services\AuthService;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
@@ -33,7 +34,7 @@ class SigninController extends Controller
         ]);
 
         // 2. Ask the Service to attempt login and get the destination
-        $redirectUrl = $this->authService->attemptLogin($credentials, $request, ['student']);
+        $redirectUrl = $this->authService->attemptLogin($credentials, $request, [Role::Student]);
 
         // 3. If successful, regenerate session and redirect
         if ($redirectUrl) {

@@ -5,15 +5,13 @@ namespace App\Http\Controllers;
 use App\Models\Deck;
 use App\Models\Flashcard;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 
 class FlashcardController extends Controller
 {
     public function store(Request $request, Deck $deck)
     {
-        if ($deck->user_id !== Auth::id()) {
-            abort(403, 'Unauthorized action.');
-        }
+        Gate::authorize('manage', $deck);
 
         $request->validate([
             'question' => 'required|string|max:255',
@@ -30,19 +28,16 @@ class FlashcardController extends Controller
 
     public function destroy(Flashcard $flashcard)
     {
-        if ($flashcard->deck->user_id !== Auth::id()) {
-            abort(403, 'Unauthorized action.');
-        }
+        Gate::authorize('manage', $flashcard);
 
-        $flashcard->delete($flashcard);
+        $flashcard->delete();
 
         return redirect()->back()->with('success', 'Flashcard deleted.');
     }
+
     public function update(Flashcard $flashcard, Request $request)
     {
-        if($flashcard->deck->user_id!= Auth::id()){
-            abort(403, 'Unauthorized action.');
-        }
+        Gate::authorize('manage', $flashcard);
 
         $request->validate([
             'question' => 'required|string|max:255',
@@ -54,7 +49,6 @@ class FlashcardController extends Controller
             'answer' => $request->answer,
         ]);
 
-        return redirect()->back()->with('Success', 'Flashcard updated successfully.');
-
+        return redirect()->back()->with('success', 'Flashcard updated successfully.');
     }
 }

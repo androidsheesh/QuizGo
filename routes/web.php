@@ -1,11 +1,12 @@
 <?php
 
-use App\Http\Controllers\DeckController;
-use App\Http\Controllers\FlashcardGenerationStatusController;
-use App\Http\Controllers\FlashcardController;
-use App\Http\Controllers\HomeController;
+use App\Http\Controllers\AdminController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
-use App\Http\Controllers\MyProfileController;
+use App\Http\Controllers\DeckController;
+use App\Http\Controllers\FlashcardController;
+use App\Http\Controllers\GenerationStatusController;
+use App\Http\Controllers\HomeController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SigninController;
 use App\Http\Controllers\SignupController;
 use App\Http\Controllers\StudentClassroomController;
@@ -13,13 +14,11 @@ use App\Http\Controllers\StudentQuizController;
 use App\Http\Controllers\StudyController;
 use App\Http\Controllers\TeacherAiQuizController;
 use App\Http\Controllers\TeacherClassroomController;
-use App\Http\Controllers\TeacherdashboardController;
-use App\Http\Controllers\TeacherprofileController;
+use App\Http\Controllers\TeacherDashboardController;
 use App\Http\Controllers\TeacherQuizController;
-use App\Http\Controllers\WelcomeController;
 use App\Http\Controllers\TeacherSigninController;
-use App\Http\Controllers\AdminController;
-use Illuminate\Support\Facades\Auth;
+use App\Http\Controllers\WelcomeController;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Route;
 
 // ─── Public Routes (no auth) ───
@@ -45,8 +44,13 @@ Route::post('/teacher/signin', [TeacherSigninController::class, 'store'])->middl
 
 Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->middleware('auth')->name('logout');
 
+// ─── Any signed-in user ───
+Route::middleware(['auth', 'session.token'])->group(function () {
+    Route::get('/api/generations/{uuid}', GenerationStatusController::class)->name('generations.status');
+});
+
 // ─── Student Routes ───
-Route::middleware(['auth', 'prevent-back', 'session.token'])->group(function () {
+Route::middleware(['auth', 'role:student', 'prevent-back', 'session.token'])->group(function () {
 
     Route::get('/home', [HomeController::class, 'show'])->name('home');
 
@@ -72,10 +76,10 @@ Route::middleware(['auth', 'prevent-back', 'session.token'])->group(function () 
     Route::get('/decks/{deck}/study/identification', [StudyController::class, 'identification'])->name('study.identification');
 
     // Profile
-    Route::get('/myprofile', [MyProfileController::class, 'show'])->name('myprofile');
-    Route::put('/myprofile', [MyProfileController::class, 'update'])->name('myprofile.update');
-    Route::put('/myprofile/password', [MyProfileController::class, 'updatePassword'])->name('myprofile.password');
-    Route::delete('/myprofile', [MyProfileController::class, 'destroy'])->name('myprofile.destroy');
+    Route::get('/myprofile', [ProfileController::class, 'show'])->name('myprofile');
+    Route::put('/myprofile', [ProfileController::class, 'update'])->name('myprofile.update');
+    Route::put('/myprofile/password', [ProfileController::class, 'updatePassword'])->name('myprofile.password');
+    Route::delete('/myprofile', [ProfileController::class, 'destroy'])->name('myprofile.destroy');
 
     // Classrooms
     Route::get('/assignments', [StudentClassroomController::class, 'index'])->name('student.assignments');
@@ -86,37 +90,19 @@ Route::middleware(['auth', 'prevent-back', 'session.token'])->group(function () 
     Route::get('/quiz/{assignment}/take', [StudentQuizController::class, 'take'])->name('student.quiz.take');
     Route::post('/quiz/{assignment}/submit', [StudentQuizController::class, 'submit'])->name('student.quiz.submit');
     Route::get('/quiz/results/{attempt}', [StudentQuizController::class, 'results'])->name('student.quiz.results');
-
-    // API
-    Route::get('/api/check-new-deck/{oldId}', function ($oldId) {
-        $newDeck = Auth::user()->decks()
-            ->where('id', '>', $oldId)
-            ->latest()
-            ->first();
-
-        return response()->json([
-            'is_ready' => (bool) $newDeck,
-            'deck_id'  => $newDeck?->id,
-        ]);
-    });
-
-    Route::get('/api/flashcards/status/{uuid}', FlashcardGenerationStatusController::class)
-        ->name('flashcards.status');
 });
 
 // ─── Admin Routes ───
-Route::middleware(['auth', 'prevent-back', 'session.token'])->prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth', 'role:admin', 'prevent-back', 'session.token'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/', [AdminController::class, 'dashboard'])->name('dashboard');
     Route::post('/teachers', [AdminController::class, 'storeTeacher'])->name('teachers.store');
     Route::delete('/teachers/{teacher}', [AdminController::class, 'deleteTeacher'])->name('teachers.destroy');
 });
 
 // ─── Teacher Routes ───
-Route::middleware(['auth:web,teacher', 'prevent-back', 'session.token'])->group(function () {
-    Route::get('/teacher-dashboard', [TeacherdashboardController::class, 'show'])->name('teacher.dashboard');
-});
+Route::middleware(['auth', 'role:teacher', 'prevent-back', 'session.token'])->prefix('teacher')->name('teacher.')->group(function () {
 
-Route::middleware(['auth:web,teacher', 'teacher', 'prevent-back', 'session.token'])->prefix('teacher')->name('teacher.')->group(function () {
+    Route::get('/dashboard', [TeacherDashboardController::class, 'show'])->name('dashboard');
 
     // Classrooms
     Route::post('/classrooms', [TeacherClassroomController::class, 'store'])->name('classroom.store');
@@ -127,37 +113,17 @@ Route::middleware(['auth:web,teacher', 'teacher', 'prevent-back', 'session.token
 
     // Quizzes
     Route::get('/quizzes', [TeacherQuizController::class, 'index'])->name('quiz.index');
-    Route::get('/quizzes/create', [TeacherQuizController::class, 'create'])->name('quiz.create');
     Route::post('/quizzes', [TeacherQuizController::class, 'store'])->name('quiz.store');
     Route::post('/quizzes/assign', [TeacherQuizController::class, 'assign'])->name('quiz.assign');
     Route::delete('/quizzes/assignments/{assignment}', [TeacherQuizController::class, 'unassign'])->name('quiz.unassign');
-
-    // AI Quiz
-    Route::get('/quizzes/ai', [TeacherAiQuizController::class, 'showUpload'])->name('quiz.ai');
     Route::post('/quizzes/ai', [TeacherAiQuizController::class, 'generate'])->name('quiz.ai.generate');
-    Route::post('/quizzes/ai/topic', [TeacherAiQuizController::class, 'generateFromTopic'])->name('quiz.ai.topic');
-    Route::post('/quizzes/ai/text', [TeacherAiQuizController::class, 'generateFromText'])->name('quiz.ai.text');
-    Route::post('/quizzes/ai/pdf', [TeacherAiQuizController::class, 'generateFromPdf'])->name('quiz.ai.pdf');
-
     Route::get('/quizzes/{quiz}', [TeacherQuizController::class, 'show'])->name('quiz.show');
+    Route::patch('/quizzes/{quiz}/active', [TeacherQuizController::class, 'toggleActive'])->name('quiz.toggle');
     Route::delete('/quizzes/{quiz}', [TeacherQuizController::class, 'destroy'])->name('quiz.destroy');
 
     // Profile
-    Route::get('/profile', [TeacherprofileController::class, 'show'])->name('profile');
-    Route::put('/profile', [TeacherprofileController::class, 'update'])->name('profile.update');
-    Route::put('/profile/password', [TeacherprofileController::class, 'updatePassword'])->name('profile.password');
-    Route::delete('/profile', [TeacherprofileController::class, 'destroy'])->name('profile.destroy');
-
-    // API
-    Route::get('/api/check-new-quiz/{oldId}', function ($oldId) {
-        $newQuiz = \App\Models\Quiz::where('teacher_id', Auth::id())
-            ->where('id', '>', $oldId)
-            ->latest()
-            ->first();
-
-        return response()->json([
-            'is_ready' => (bool) $newQuiz,
-            'quiz_id'  => $newQuiz?->id,
-        ]);
-    })->whereNumber('oldId')->name('api.check-new-quiz');
+    Route::get('/profile', [ProfileController::class, 'show'])->name('profile');
+    Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });

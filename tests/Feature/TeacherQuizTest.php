@@ -4,7 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Quiz;
 use App\Models\User;
-use App\Services\GeminiServices;
+use App\Services\GeminiService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use RuntimeException;
 use Tests\TestCase;
@@ -68,17 +68,20 @@ class TeacherQuizTest extends TestCase
         ])->assertSessionHasErrors('questions.0.correct_answer');
     }
 
-    public function test_the_generation_polling_endpoint_is_reachable(): void
+    public function test_a_teacher_can_close_and_reopen_a_quiz(): void
     {
-        $this->signIn($this->teacher)
-            ->getJson(route('teacher.api.check-new-quiz', ['oldId' => 0]))
-            ->assertOk()
-            ->assertJson(['is_ready' => false]);
+        $quiz = Quiz::create(['teacher_id' => $this->teacher->id, 'title' => 'Cells', 'is_active' => true]);
+
+        $this->signIn($this->teacher)->patch(route('teacher.quiz.toggle', $quiz));
+        $this->assertFalse($quiz->fresh()->is_active);
+
+        $this->patch(route('teacher.quiz.toggle', $quiz));
+        $this->assertTrue($quiz->fresh()->is_active);
     }
 
     public function test_ai_questions_without_a_matching_correct_answer_are_dropped(): void
     {
-        $questions = app(GeminiServices::class)->normalizeQuizQuestions([
+        $questions = app(GeminiService::class)->normalizeQuizQuestions([
             ['question' => 'Good', 'type' => 'multiple_choice', 'choices' => ['A', 'B'], 'correct_answer' => 'b'],
             ['question' => 'Answer not a choice', 'choices' => ['A', 'B'], 'correct_answer' => 'C'],
             ['question' => 'One choice', 'choices' => ['A'], 'correct_answer' => 'A'],
@@ -95,7 +98,7 @@ class TeacherQuizTest extends TestCase
     {
         $this->expectException(RuntimeException::class);
 
-        app(GeminiServices::class)->normalizeQuizQuestions([
+        app(GeminiService::class)->normalizeQuizQuestions([
             ['question' => 'Bad', 'choices' => ['A', 'B'], 'correct_answer' => 'Z'],
         ]);
     }

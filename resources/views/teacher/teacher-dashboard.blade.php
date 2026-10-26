@@ -152,7 +152,7 @@
                                             <p class="text-gray-400 text-sm mt-2 line-clamp-2">{{ $classroom->description }}</p>
                                         @endif
                                         <div class="mt-4 flex items-center text-sm text-slate-400">
-                                            <span>{{ $classroom->quizAssignments->count() }} {{ Str::plural('quiz', $classroom->quizAssignments->count()) }} assigned</span>
+                                            <span>{{ $classroom->quiz_assignments_count }} {{ Str::plural('quiz', $classroom->quiz_assignments_count) }} assigned</span>
                                         </div>
                                     </div>
                                 </a>

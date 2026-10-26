@@ -45,8 +45,7 @@ class TeacherDashboardService
     public function getPaginatedClassrooms(User $teacher, ?string $searchClass): LengthAwarePaginator
     {
         $query = Classroom::where('teacher_id', $teacher->id)
-            ->withCount('students')
-            ->with(['quizAssignments.quiz', 'quizAssignments.attempts'])
+            ->withCount(['students', 'quizAssignments'])
             ->latest();
 
         if (!empty($searchClass)) {

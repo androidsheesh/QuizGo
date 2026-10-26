@@ -23,7 +23,7 @@ class SignupController extends Controller
             'firstname' => 'required|string|max:255',
             'lastname'  => 'required|string|max:255',
             'email'     => 'required|email|max:255|unique:users', // Ensures email isn't already taken
-            'password'  => 'required|string|min:8', // Requires at least 8 characters
+            'password'  => 'required|string|min:8|confirmed', // Must match the "Confirm Password" field
         ]);
 
         // 2. Create the user
@@ -39,8 +39,7 @@ class SignupController extends Controller
         Auth::login($user);
         $authService->issueSessionToken($user, $request);
 
-        // Redis-backed sessions to store a quick flash message
-        $request->session()->flash('status', 'Welcome to QuizGo, {$user->firstname}!');
+        $request->session()->flash('status', "Welcome to QuizGo, {$user->firstname}!");
 
         // after signing up, it will redirect directly to the dashboard page
         return redirect('home');

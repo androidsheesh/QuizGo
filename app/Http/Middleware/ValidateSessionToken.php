@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Enums\Role;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -17,7 +18,7 @@ class ValidateSessionToken
             $sessionToken = session('session_token');
 
             if (!$sessionToken || $sessionToken !== $user->session_token) {
-                $redirectRoute = in_array($user->role, ['teacher', 'admin'], true)
+                $redirectRoute = $user->hasRole(Role::Teacher, Role::Admin)
                     ? 'teacher.signin'
                     : 'signin';
 

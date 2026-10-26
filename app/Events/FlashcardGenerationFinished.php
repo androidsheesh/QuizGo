@@ -2,7 +2,7 @@
 
 namespace App\Events;
 
-use App\Models\FlashcardGeneration;
+use App\Models\Generation;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
@@ -13,7 +13,7 @@ class FlashcardGenerationFinished implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    public function __construct(public FlashcardGeneration $generation)
+    public function __construct(public Generation $generation)
     {
         $this->generation->loadMissing('deck');
     }
@@ -40,7 +40,7 @@ class FlashcardGenerationFinished implements ShouldBroadcast
             'deck_url' => $this->generation->deck_id
                 ? route('decks.show', $this->generation->deck_id)
                 : null,
-            'error' => $this->generation->status === FlashcardGeneration::STATUS_FAILED
+            'error' => $this->generation->status === Generation::STATUS_FAILED
                 ? [
                     'code' => $this->generation->error_code,
                     'message' => 'Generation failed. Please try a different prompt or try again later.',

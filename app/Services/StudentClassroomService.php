@@ -2,11 +2,10 @@
 
 namespace App\Services;
 
+use App\Exceptions\ActionFailedException;
 use App\Models\Classroom;
-use App\Models\QuizAttempt;
 use App\Models\User;
 use Illuminate\Pagination\LengthAwarePaginator;
-use Illuminate\Support\Collection;
 
 class StudentClassroomService
 {
@@ -41,7 +40,7 @@ class StudentClassroomService
     {
         $classroom->load([
             'teacher',
-            'quizAssignments.quiz',
+            'quizAssignments.quiz' => fn ($q) => $q->withCount('questions'),
             'quizAssignments.attempts' => function($q) use ($student) {
                 $q->where('student_id', $student->id);
             }
@@ -64,59 +63,20 @@ class StudentClassroomService
     }
 
     /**
-     * Calculate and return the leaderboard/rankings for a specific classroom.
+     * Enroll a student in a class using its code.
+     *
+     * @throws ActionFailedException when the student is already enrolled
      */
-    public function calculateClassRankings(Classroom $classroom): Collection
-    {
-        $classroom->load(['students', 'quizAssignments.attempts.student']);
-
-        $assignmentIds = $classroom->quizAssignments->pluck('id');
-        $studentIds = $classroom->students->pluck('id');
-
-        $allAttempts = QuizAttempt::completed()
-            ->whereIn('student_id', $studentIds)
-            ->whereIn('quiz_assignment_id', $assignmentIds)
-            ->get()
-            ->groupBy('student_id');
-
-        $studentRankings = collect();
-
-        foreach ($classroom->students as $classStudent) {
-            $attempts = $allAttempts->get($classStudent->id, collect());
-
-            $totalQuestions = $attempts->sum('total_questions');
-            $totalScore = $attempts->sum('score');
-
-            $studentRankings->push([
-                'student'       => $classStudent,
-                'best_score'    => $attempts->max('score') ?? 0,
-                'avg_score'     => $totalQuestions > 0 ? round(($totalScore / $totalQuestions) * 100, 1) : 0,
-                'best_time'     => $attempts->min('time_taken') ?? 0,
-                'total_time'    => $attempts->sum('time_taken') ?? 0,
-                'attempt_count' => $attempts->count(),
-            ]);
-        }
-
-        return $studentRankings->sortBy([
-            ['best_score', 'desc'],
-            ['best_time', 'asc'],
-        ])->values();
-    }
-
-    /**
-     * Attempt to enroll a student in a class using a code.
-     * Returns an array with success status and a message.
-     */
-    public function enrollByCode(User $student, string $code): array
+    public function enrollByCode(User $student, string $code): Classroom
     {
         $classroom = Classroom::where('code', $code)->firstOrFail();
 
         if ($classroom->students()->where('student_id', $student->id)->exists()) {
-            return ['success' => false, 'message' => 'You are already enrolled in this class.'];
+            throw new ActionFailedException('You are already enrolled in this class.', 'code');
         }
 
         $classroom->students()->attach($student->id);
 
-        return ['success' => true, 'message' => 'You have joined ' . $classroom->name . '!'];
+        return $classroom;
     }
 }

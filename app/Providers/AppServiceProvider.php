@@ -2,9 +2,9 @@
 
 namespace App\Providers;
 
+use App\Models\Classroom;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\View;
-use Illuminate\Support\Facades\URL; // Import the URL facade
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -25,11 +25,6 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Force HTTPS URL generation in production/tunnel environments
-        // if (config('app.env') === 'production' || env('APP_URL') !== 'http://localhost') {
-        //     URL::forceScheme('https');
-        // }
-
         // Keyed by email + IP so a whole classroom behind one school IP isn't locked out together;
         // the per-IP limit still stops one machine from spraying many accounts
         RateLimiter::for('login', function (Request $request) {
@@ -45,6 +40,12 @@ class AppServiceProvider extends ServiceProvider
                 : collect();
 
             $view->with('recentDecks', $decks);
+        });
+
+        View::composer('components.teacher-sidebar', function ($view) {
+            $view->with('sidebarClassrooms', Auth::check()
+                ? Classroom::where('teacher_id', Auth::id())->orderBy('name')->get()
+                : collect());
         });
     }
 }

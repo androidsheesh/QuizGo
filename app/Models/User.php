@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Enums\Role;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -18,17 +18,28 @@ class User extends Authenticatable
     use HasFactory, Notifiable;
 
     /**
+     * Matches the column default, so a freshly created user has a role before it's reloaded.
+     */
+    protected $attributes = [
+        'role' => 'student',
+    ];
+
+    /**
      * Get the attributes that should be cast.
      *
      * @return array<string, string>
      */
-
     protected function casts(): array
     {
         return [
-            'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'role' => Role::class,
         ];
+    }
+
+    public function hasRole(Role ...$roles): bool
+    {
+        return in_array($this->role, $roles, true);
     }
 
     /**
@@ -36,7 +47,7 @@ class User extends Authenticatable
      */
     public function isTeacher(): bool
     {
-        return $this->role === 'teacher';
+        return $this->role === Role::Teacher;
     }
 
     /**
@@ -44,7 +55,12 @@ class User extends Authenticatable
      */
     public function isStudent(): bool
     {
-        return $this->role === 'student';
+        return $this->role === Role::Student;
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->role === Role::Admin;
     }
 
     /**

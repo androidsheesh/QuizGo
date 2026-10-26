@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Deck;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 
 class StudyController extends Controller
 {
@@ -13,10 +13,7 @@ class StudyController extends Controller
      */
     private function prepareStudy(Deck $deck, Request $request)
     {
-        // Ensure user owns the deck
-        if ($deck->user_id !== Auth::id()) {
-            abort(403, 'Unauthorized action.');
-        }
+        Gate::authorize('manage', $deck);
 
         $deck->load('flashcards');
 

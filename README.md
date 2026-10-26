@@ -1,63 +1,63 @@
-<<<<<<< HEAD
 # QuizGo
-=======
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Students turn a topic, pasted text or a PDF into AI-generated flashcard decks and study them three ways (flip cards, multiple choice, identification). Teachers run classrooms, write or AI-generate quizzes, assign them, and see proctored results and rankings. Admins create teacher accounts.
 
-## About Laravel
+**Stack:** Laravel 13 (PHP 8.3+), MySQL, Blade + Alpine.js + Tailwind (Vite), Laravel Reverb for real-time notifications, Google Gemini for generation, poppler + Tesseract for reading PDFs.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Local setup
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
-
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
-
-## Learning Laravel
-
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
-
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+Requirements: PHP 8.3+, Composer, Node 20+, MySQL, and for PDF uploads `poppler-utils` (`pdftotext`, `pdftoppm`) and `tesseract` on your PATH.
 
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+composer setup                 # install, copy .env, generate key, migrate, build assets
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+Then fill in `.env`:
 
-## Contributing
+| Setting | What it's for |
+|---|---|
+| `DB_*` | MySQL connection |
+| `GEMINI_API_KEY` | Flashcard and quiz generation |
+| `REVERB_*` | Real-time "your deck/quiz is ready" toasts |
+| `ADMIN_EMAIL`, `ADMIN_PASSWORD` | The admin account created by `php artisan db:seed` |
+| `UPLOADS_DISK` | Where uploads wait for the queue worker; use a shared disk (e.g. `s3`) if the worker runs in a separate container |
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+Create the admin, then run everything (web server, queue worker, logs, Vite):
 
-## Code of Conduct
+```bash
+php artisan db:seed
+composer dev
+php artisan reverb:start       # in another terminal, for real-time notifications
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+Students sign up at `/signup`. Teachers sign in at `/teacher/signin` with accounts the admin creates.
 
-## Security Vulnerabilities
+## Tests
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+```bash
+composer test
+```
 
-## License
+Tests run on SQLite in memory and fake the queue, Gemini and storage where needed.
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
->>>>>>> fc87bae (initial commit: initial migrations and default setup)
+## How the code is organised
 
+| Where | What |
+|---|---|
+| `routes/web.php` | All routes, grouped by role (`role:student`, `role:teacher`, `role:admin` middleware) |
+| `app/Http/Controllers` | Thin controllers: validate, authorize, call a service, respond |
+| `app/Http/Requests` | Form Requests for the larger forms (quiz creation, AI generation, profile) |
+| `app/Policies` | Who may view or change each model (decks, quizzes, classrooms, attempts…) |
+| `app/Services` | Business logic: grading, rankings, quiz creation, generation dispatch, Gemini prompts, PDF text extraction |
+| `app/Jobs` | `GenerateFlashcards` and `GenerateQuiz`, both built on `GenerationJob` |
+| `app/Models/Generation.php` | Progress of every background AI generation; polled at `/api/generations/{uuid}` |
+| `resources/js` | Alpine setup, Echo listeners, and the quiz-taking proctoring/timer (`quiz-take.js`) |
+
+Quiz timing is enforced on the server: an attempt starts when the quiz page opens, and answers that arrive after the time limit or due date (plus a 60-second grace period) score zero.
+
+## Deploying
+
+- Run `php artisan migrate --force` on every release.
+- Run a queue worker (`php artisan queue:work`); AI generation only happens there.
+- Run `php artisan reverb:start` (or point `REVERB_*` at a hosted Reverb/Pusher) for real-time notifications.
+- Empty the queue before deploying a release that renames or changes job classes.

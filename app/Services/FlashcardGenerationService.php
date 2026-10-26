@@ -1,12 +1,11 @@
 <?php
 namespace App\Services;
 
-use App\Models\FlashcardGeneration;
-use App\Jobs\ProcessPdfFlashcards;
-use App\Jobs\ProcessTopicFlashcards;
-use App\Jobs\ProcessTextFlashcards;
+use App\Jobs\GenerateFlashcards;
+use App\Models\Generation;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Throwable;
 
 class FlashcardGenerationService
@@ -15,71 +14,50 @@ class FlashcardGenerationService
     {
     }
 
-    public function generateFromTopic(int $userId, string $topic, int $count): FlashcardGeneration
+    public function generateFromTopic(int $userId, string $topic, int $count): Generation
     {
-        $generation = FlashcardGeneration::create([
-            'user_id' => $userId,
-            'source_type' => 'topic',
-            'status' => FlashcardGeneration::STATUS_PENDING,
-        ]);
+        $topic = strtolower($topic);
 
-        try {
-            ProcessTopicFlashcards::dispatch($userId, strtolower($topic), $count, $generation->id);
-        } catch (Throwable $e) {
-            $this->handleFailure($generation, $userId, $e, 'Topic Generation Dispatch Failed');
-        }
-
-        return $generation;
+        return $this->start($userId, 'topic', fn () => $topic, $count, ucfirst($topic));
     }
 
-    public function generateFromPdf(int $userId, UploadedFile $file, int $count): FlashcardGeneration
+    public function generateFromPdf(int $userId, UploadedFile $file, int $count): Generation
     {
-        $generation = FlashcardGeneration::create([
-            'user_id' => $userId,
-            'source_type' => 'pdf',
-            'status' => FlashcardGeneration::STATUS_PENDING,
-        ]);
+        $title = str_replace('.pdf', '', $file->getClientOriginalName());
 
-        try {
-            $originalTitle = $file->getClientOriginalName();
-            $path = $this->uploads->store($file, 'pdf_uploads');
-
-            ProcessPdfFlashcards::dispatch($userId, $path, $count, $originalTitle, $generation->id);
-        } catch (Throwable $e) {
-            $this->handleFailure($generation, $userId, $e, 'PDF Generation Dispatch Failed');
-        }
-
-        return $generation;
+        return $this->start($userId, 'pdf', fn () => $this->uploads->store($file, 'pdf_uploads'), $count, $title);
     }
 
-    public function generateFromText(int $userId, string $text, int $count): FlashcardGeneration
+    public function generateFromText(int $userId, string $text, int $count): Generation
     {
-        $generation = FlashcardGeneration::create([
-            'user_id' => $userId,
-            'source_type' => 'text',
-            'status' => FlashcardGeneration::STATUS_PENDING,
-        ]);
-
-        try {
-            ProcessTextFlashcards::dispatch($userId, $text, $count, $generation->id);
-        } catch (Throwable $e) {
-            $this->handleFailure($generation, $userId, $e, 'Text Generation Dispatch Failed');
-        }
-
-        return $generation;
+        return $this->start($userId, 'text', fn () => $text, $count, ucfirst(Str::words($text, 5, '...')));
     }
 
     /**
-     * Centralized error handling for generation failures.
+     * Record the generation, then queue it. $source is resolved inside the try so a failed
+     * upload is reported on the generation like any other dispatch failure.
      */
-    protected function handleFailure(FlashcardGeneration $generation, int $userId, Throwable $e, string $logMessage): void
+    private function start(int $userId, string $sourceType, callable $source, int $count, string $title): Generation
     {
-        $generation->markFailed($e, 'QUEUE_DISPATCH_FAILED');
-
-        Log::error($logMessage, [
-            'generation_id' => $generation->id,
+        $generation = Generation::create([
+            'kind' => Generation::KIND_FLASHCARDS,
             'user_id' => $userId,
-            'error' => $e->getMessage(),
+            'source_type' => $sourceType,
+            'status' => Generation::STATUS_PENDING,
         ]);
+
+        try {
+            GenerateFlashcards::dispatch($generation->id, $sourceType, $source(), $count, $title);
+        } catch (Throwable $e) {
+            $generation->markFailed($e, 'QUEUE_DISPATCH_FAILED');
+
+            Log::error('Flashcard generation dispatch failed', [
+                'generation_id' => $generation->id,
+                'user_id' => $userId,
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        return $generation;
     }
 }
