@@ -20,7 +20,7 @@
 
     <style>[x-cloak] { display: none !important; }</style>
     @php
-        $broadcastUser = auth('teacher')->user() ?? auth('web')->user();
+        $broadcastUser = auth()->user();
     @endphp
     @if($broadcastUser)
         <script>

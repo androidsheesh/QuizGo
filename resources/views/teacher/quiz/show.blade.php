@@ -11,6 +11,12 @@
                         <a href="{{ route('teacher.quiz.index') }}" class="text-emerald-500 font-semibold text-sm hover:text-emerald-600 mb-2 inline-block">← Back to Quizzes</a>
                         <h2 class="text-3xl font-bold text-slate-800">{{ $quiz->title }}</h2>
                         <p class="text-slate-500 mt-1">{{ $quiz->description ?? 'No description' }} • {{ $quiz->questions->count() }} Questions</p>
+                        <form method="POST" action="{{ route('teacher.quiz.toggle', $quiz) }}" class="mt-3">
+                            @csrf @method('PATCH')
+                            <button type="submit" class="px-4 py-1.5 rounded-full text-xs font-bold border transition {{ $quiz->is_active ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100' : 'bg-gray-100 text-gray-600 border-gray-200 hover:bg-gray-200' }}">
+                                {{ $quiz->is_active ? 'Open to students · Close quiz' : 'Closed · Reopen quiz' }}
+                            </button>
+                        </form>
                     </div>
                     
                     {{-- Alert Messages --}}

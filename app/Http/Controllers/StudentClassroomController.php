@@ -3,17 +3,18 @@
 namespace App\Http\Controllers;
 
 use App\Models\Classroom;
+use App\Services\ClassRankingService;
 use App\Services\StudentClassroomService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 
 class StudentClassroomController extends Controller
 {
-    protected $classroomService;
-
-    public function __construct(StudentClassroomService $classroomService)
-    {
-        $this->classroomService = $classroomService;
+    public function __construct(
+        private StudentClassroomService $classroomService,
+        private ClassRankingService $rankingService,
+    ) {
     }
 
     /**
@@ -34,19 +35,11 @@ class StudentClassroomController extends Controller
      */
     public function show(Classroom $classroom)
     {
-        $student = Auth::user();
+        Gate::authorize('view', $classroom);
 
-        // Security check: Ensure student is enrolled in this classroom
-        abort_unless(
-            $classroom->students()->where('student_id', $student->id)->exists(),
-            403,
-            'You are not enrolled in this class.'
-        );
+        [$pendingQuizzes, $completedQuizzes] = $this->classroomService->getStudentAssignments($classroom, Auth::user());
 
-        // Fetch data via the service
-        [$pendingQuizzes, $completedQuizzes] = $this->classroomService->getStudentAssignments($classroom, $student);
-
-        $studentRankings = $this->classroomService->calculateClassRankings($classroom);
+        $studentRankings = $this->rankingService->forClassroom($classroom);
 
         return view('student.classroom-detail', compact(
             'classroom',
@@ -65,12 +58,8 @@ class StudentClassroomController extends Controller
             'code' => 'required|string|exists:classrooms,code',
         ]);
 
-        $enrollment = $this->classroomService->enrollByCode(Auth::user(), $validated['code']);
+        $classroom = $this->classroomService->enrollByCode(Auth::user(), $validated['code']);
 
-        if (!$enrollment['success']) {
-            return back()->withErrors(['code' => $enrollment['message']]);
-        }
-
-        return back()->with('success', $enrollment['message']);
+        return back()->with('success', 'You have joined ' . $classroom->name . '!');
     }
 }

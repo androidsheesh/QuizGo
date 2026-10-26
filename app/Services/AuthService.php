@@ -2,9 +2,11 @@
 
 namespace App\Services;
 
+use App\Enums\Role;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
@@ -15,6 +17,8 @@ class AuthService
     /**
      * Attempt to authenticate the user.
      * Returns the redirect URL if successful, or null if it fails.
+     *
+     * @param  Role[]|null  $allowedRoles
      */
     public function attemptLogin(array $credentials, Request $request, ?array $allowedRoles = null): ?string
     {
@@ -35,7 +39,7 @@ class AuthService
                 return null;
             }
 
-            if ($allowedRoles !== null && ! in_array($user->role, $allowedRoles, true)) {
+            if ($allowedRoles !== null && ! $user->hasRole(...$allowedRoles)) {
                 return null;
             }
 
@@ -48,7 +52,7 @@ class AuthService
             return null;
         }
 
-        if ($allowedRoles !== null && ! in_array($user->role, $allowedRoles, true)) {
+        if ($allowedRoles !== null && ! $user->hasRole(...$allowedRoles)) {
             return null;
         }
 
@@ -92,9 +96,24 @@ class AuthService
         $request->session()->put('session_token', $token);
     }
 
+    /**
+     * Whether the user is signed in on another device. session_token is only cleared on an
+     * explicit logout, so with database sessions also require a session that hasn't expired.
+     */
     public function hasActiveSession(User $user): bool
     {
-        return filled($user->session_token);
+        if (blank($user->session_token)) {
+            return false;
+        }
+
+        if (config('session.driver') !== 'database') {
+            return true;
+        }
+
+        return DB::table(config('session.table') ?: 'sessions')
+            ->where('user_id', $user->id)
+            ->where('last_activity', '>=', now()->subMinutes((int) config('session.lifetime'))->timestamp)
+            ->exists();
     }
 
     /**
@@ -103,9 +122,9 @@ class AuthService
     protected function determineRedirectRoute(User $user): string
     {
         return match ($user->role) {
-            'teacher' => route('teacher.dashboard'),
-            'admin'   => route('admin.dashboard'),
-            default   => url('home'),
+            Role::Teacher => route('teacher.dashboard'),
+            Role::Admin   => route('admin.dashboard'),
+            default       => url('home'),
         };
     }
 }

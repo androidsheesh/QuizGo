@@ -7,14 +7,12 @@ use App\Models\QuizAttempt;
 use App\Services\StudentQuizService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 
 class StudentQuizController extends Controller
 {
-    protected $quizService;
-
-    public function __construct(StudentQuizService $quizService)
+    public function __construct(private StudentQuizService $quizService)
     {
-        $this->quizService = $quizService;
     }
 
     /**
@@ -25,11 +23,7 @@ class StudentQuizController extends Controller
         $student = Auth::user();
 
         // 1. HTTP Security: Validate enrollment
-        abort_unless(
-            $assignment->classroom->students()->where('student_id', $student->id)->exists(),
-            403,
-            'You are not enrolled in the class for this quiz.'
-        );
+        Gate::authorize('take', $assignment);
 
         // 2. Check for existing attempts via Service
         $existingAttempt = $this->quizService->getExistingAttempt($assignment, $student);
@@ -67,10 +61,7 @@ class StudentQuizController extends Controller
         $student = Auth::user();
 
         // 1. HTTP Security: Validate enrollment
-        abort_unless(
-            $assignment->classroom->students()->where('student_id', $student->id)->exists(),
-            403
-        );
+        Gate::authorize('take', $assignment);
 
         // 2. Prevent multiple submissions
         if ($this->quizService->getExistingAttempt($assignment, $student)) {
@@ -114,7 +105,7 @@ class StudentQuizController extends Controller
     public function results(QuizAttempt $attempt)
     {
         // 1. HTTP Security: Ensure the student owns this attempt
-        abort_unless($attempt->student_id === Auth::id(), 403);
+        Gate::authorize('view', $attempt);
         abort_unless($attempt->isCompleted(), 404);
 
         $attempt->load([

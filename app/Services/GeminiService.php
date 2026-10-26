@@ -8,17 +8,16 @@ use Gemini\Exceptions\ErrorException;
 use Gemini\Exceptions\TransporterException;
 use Gemini\Laravel\Facades\Gemini;
 use RuntimeException;
-use thiagoalessio\TesseractOCR\TesseractOCR;
 use Throwable;
 
-class GeminiServices
+/**
+ * Builds Gemini prompts and validates what comes back. Getting text out of files is
+ * PdfTextExtractor's job.
+ */
+class GeminiService
 {
-    private const MAX_SOURCE_TEXT_LENGTH = 8000;
-
-    private const MAX_PDF_PAGES = 20;
-
-    // Below this, the text layer is missing or junk (e.g. a scanned PDF) and OCR is needed
-    private const MIN_PDF_TEXT_LENGTH = 200;
+    // Only this much source text is sent to Gemini
+    public const MAX_SOURCE_TEXT_LENGTH = 8000;
 
     private string $model;
 
@@ -102,104 +101,14 @@ class GeminiServices
         return substr(trim($text), 0, self::MAX_SOURCE_TEXT_LENGTH);
     }
 
-    private function extractPdfText(string $pdfPath): string
-    {
-        // Most PDFs already carry a text layer; reading it takes milliseconds, while OCR takes seconds per page
-        $text = $this->extractPdfTextLayer($pdfPath);
-
-        if (strlen($text) >= self::MIN_PDF_TEXT_LENGTH) {
-            return $text;
-        }
-
-        return $this->extractPdfTextWithOcr($pdfPath);
-    }
-
-    private function extractPdfTextLayer(string $pdfPath): string
-    {
-        $cmd = sprintf(
-            'pdftotext -l %d -layout %s - 2>&1',
-            self::MAX_PDF_PAGES,
-            escapeshellarg($pdfPath)
-        );
-        exec($cmd, $output, $returnCode);
-
-        return $returnCode === 0 ? trim(implode("\n", $output)) : '';
-    }
-
-    private function extractPdfTextWithOcr(string $pdfPath): string
-    {
-        // Create a temporary directory for the rasterized page images
-        $tmpDir = sys_get_temp_dir().'/quizgo_ocr_'.uniqid();
-        if (!mkdir($tmpDir, 0700, true)) {
-            throw new RuntimeException('Could not create temporary directory for OCR processing.');
-        }
-
-        try {
-            // Convert every PDF page to PNG images using pdftoppm (from poppler-utils)
-            $prefix = $tmpDir.'/page';
-            $cmd = sprintf(
-                'pdftoppm -png -r 200 -f 1 -l %d %s %s 2>&1',
-                self::MAX_PDF_PAGES,
-                escapeshellarg($pdfPath),
-                escapeshellarg($prefix)
-            );
-            exec($cmd, $output, $returnCode);
-
-            if ($returnCode !== 0) {
-                throw new RuntimeException('Failed to convert PDF to images: '.implode(' ', $output));
-            }
-
-            // Gather all generated page images (pdftoppm names them page-1.png, page-2.png, …)
-            $images = glob($tmpDir.'/page-*.png');
-            if (empty($images)) {
-                // Fallback: some versions omit the dash
-                $images = glob($tmpDir.'/page*.png');
-            }
-            sort($images);
-
-            if (empty($images)) {
-                throw new RuntimeException('No page images were produced from the PDF.');
-            }
-
-            // Run Tesseract OCR on each page image and concatenate the text
-            $fullText = '';
-            foreach ($images as $imagePath) {
-                $pageText = (new TesseractOCR($imagePath))
-                    ->lang('eng')
-                    ->run();
-                $fullText .= "\n".$pageText;
-
-                // Only the first MAX_SOURCE_TEXT_LENGTH characters are sent to Gemini, so stop once we have them
-                if (strlen($fullText) >= self::MAX_SOURCE_TEXT_LENGTH) {
-                    break;
-                }
-            }
-
-            $fullText = trim($fullText);
-
-            if (strlen($fullText) < 50) {
-                throw new RuntimeException('Could not extract readable text from this PDF. The file may be empty or protected.');
-            }
-
-            return $fullText;
-        } finally {
-            // Clean up all temporary image files
-            $files = glob($tmpDir.'/*');
-            if ($files) {
-                array_map('unlink', $files);
-            }
-            @rmdir($tmpDir);
-        }
-    }
-
     public function generateFlashcardsFromTopic(string $topic, int $count = 10): array
     {
         $count = $this->normalizeCount($count);
 
-        return $this->generateContent(
+        return $this->normalizeFlashcards($this->generateContent(
             "Generate exactly {$count} flashcards about this topic: {$topic}.
 Return only a JSON array. Each item must have exactly these string keys: question, answer."
-        );
+        ));
     }
 
     public function generateFlashcardsFromText(string $text, int $count = 10): array
@@ -207,17 +116,39 @@ Return only a JSON array. Each item must have exactly these string keys: questio
         $count = $this->normalizeCount($count);
         $text = $this->trimSourceText($text);
 
-        return $this->generateContent(
+        return $this->normalizeFlashcards($this->generateContent(
             "Based on the following text, generate exactly {$count} flashcards.
 Return only a JSON array. Each item must have exactly these string keys: question, answer.
 Text:
 {$text}"
-        );
+        ));
     }
 
-    public function generateFlashcardsFromPdf(string $pdfPath, int $count = 10): array
+    /**
+     * Keep only flashcards with both a question and an answer.
+     */
+    public function normalizeFlashcards(array $flashcards): array
     {
-        return $this->generateFlashcardsFromText($this->extractPdfText($pdfPath), $count);
+        $valid = [];
+
+        foreach ($flashcards as $card) {
+            if (! is_array($card)) {
+                continue;
+            }
+
+            $question = trim((string) ($card['question'] ?? $card['q'] ?? ''));
+            $answer = trim((string) ($card['answer'] ?? $card['a'] ?? ''));
+
+            if ($question !== '' && $answer !== '') {
+                $valid[] = ['question' => $question, 'answer' => $answer];
+            }
+        }
+
+        if (empty($valid)) {
+            throw new RuntimeException('Gemini did not return any usable flashcards. Please try again.');
+        }
+
+        return $valid;
     }
 
     /**
@@ -285,10 +216,5 @@ question as a string, type as the string multiple_choice, choices as an array of
 Text:
 {$text}"
         ));
-    }
-
-    public function generateQuizFromPdf(string $pdfPath, int $count = 10): array
-    {
-        return $this->generateQuizFromText($this->extractPdfText($pdfPath), $count);
     }
 }

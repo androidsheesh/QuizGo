@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Deck;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 
 class DeckController extends Controller
 {
@@ -16,7 +17,7 @@ class DeckController extends Controller
             ->withCount('flashcards')
             ->latest();
 
-        if ($request->has('search') && $request->search != '') {
+        if ($request->filled('search')) {
             $query->where('title', 'like', '%' . $request->search . '%');
         }
 
@@ -40,10 +41,7 @@ class DeckController extends Controller
 
     public function show(Request $request, Deck $deck)
     {
-        // Ensure user owns the deck
-        if ($deck->user_id !== Auth::id()) {
-            abort(403, 'Unauthorized action.');
-        }
+        Gate::authorize('manage', $deck);
 
         $totalCards = $deck->flashcards()->count();
         $flashcards = $deck->flashcards()->latest()->paginate(12);
@@ -60,9 +58,7 @@ class DeckController extends Controller
 
     public function update(Request $request, Deck $deck)
     {
-        if ($deck->user_id !== Auth::id()) {
-            abort(403, 'Unauthorized action.');
-        }
+        Gate::authorize('manage', $deck);
 
         $request->validate([
             'title' => 'required|string|max:255',
@@ -77,9 +73,7 @@ class DeckController extends Controller
 
     public function destroy(Deck $deck)
     {
-        if ($deck->user_id !== Auth::id()) {
-            abort(403, 'Unauthorized action.');
-        }
+        Gate::authorize('manage', $deck);
 
         $deck->delete();
 

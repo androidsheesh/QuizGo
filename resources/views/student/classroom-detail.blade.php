@@ -60,7 +60,7 @@
                                             <div>
                                                 <h4 class="text-lg font-bold text-slate-800">{{ $assignment->quiz->title }}</h4>
                                                 <div class="flex items-center gap-3 mt-1 text-sm text-slate-500">
-                                                    <span>{{ $assignment->quiz->questions->count() }} Questions</span>
+                                                    <span>{{ $assignment->quiz->questions_count }} Questions</span>
                                                     @if($assignment->quiz->time_limit)
                                                         <span>• {{ $assignment->quiz->time_limit }} Min Limit</span>
                                                     @endif

@@ -1,5 +1,6 @@
 <?php
 
+use App\Exceptions\ActionFailedException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -12,7 +13,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withBroadcasting(
         __DIR__.'/../routes/channels.php',
-        ['middleware' => ['web', 'auth:web,teacher']],
+        ['middleware' => ['web', 'auth']],
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->trustProxies(at: '*');
@@ -22,11 +23,16 @@ return Application::configure(basePath: dirname(__DIR__))
             : route('signin'));
 
         $middleware->alias([
-            'teacher'       => \App\Http\Middleware\EnsureTeacher::class,
+            'role'          => \App\Http\Middleware\EnsureRole::class,
             'prevent-back'  => \App\Http\Middleware\PreventBackHistory::class,
-            'session.token'  => \App\Http\Middleware\ValidateSessionToken::class,
+            'session.token' => \App\Http\Middleware\ValidateSessionToken::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        // Business-rule failures from services ("already enrolled", "no such student") go back to the form
+        $exceptions->render(function (ActionFailedException $e) {
+            return back()
+                ->withErrors([$e->field => $e->getMessage()])
+                ->withInput();
+        });
     })->create();

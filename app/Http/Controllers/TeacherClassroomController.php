@@ -4,48 +4,40 @@ namespace App\Http\Controllers;
 
 use App\Models\Classroom;
 use App\Models\User;
+use App\Services\ClassRankingService;
 use App\Services\TeacherClassroomService;
-use App\Services\StudentClassroomService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 
 class TeacherClassroomController extends Controller
 {
-    protected $teacherService;
-    protected $studentService;
-
-    // Inject BOTH services here
     public function __construct(
-        TeacherClassroomService $teacherService,
-        StudentClassroomService $studentService
+        private TeacherClassroomService $teacherService,
+        private ClassRankingService $rankingService,
     ) {
-        $this->teacherService = $teacherService;
-        $this->studentService = $studentService;
     }
 
     public function show(Classroom $classroom)
     {
-        // 1. Check the Policy (Throws a 403 automatically if they aren't the owner)
         Gate::authorize('manage', $classroom);
 
-        // 2. Reuse the ranking logic from your Student Service!
-        $studentRankings = $this->studentService->calculateClassRankings($classroom);
+        $classroom->load(['students', 'quizAssignments.quiz', 'quizAssignments.attempts']);
+        $studentRankings = $this->rankingService->forClassroom($classroom);
 
         return view('teacher.classroom-detail', compact('classroom', 'studentRankings'));
     }
 
     public function store(Request $request)
     {
-        // Note: No policy check needed here since they are creating a NEW classroom
         $validated = $request->validate([
             'name'        => 'required|string|max:255',
             'description' => 'nullable|string|max:500',
         ]);
 
-        $result = $this->teacherService->createClassroom(Auth::id(), $validated);
+        $classroom = $this->teacherService->createClassroom(Auth::id(), $validated);
 
-        return back()->with('success', 'Classroom "' . $validated['name'] . '" created! Code: ' . $result['code']);
+        return back()->with('success', 'Classroom "' . $classroom->name . '" created! Code: ' . $classroom->code);
     }
 
     public function addStudent(Request $request, Classroom $classroom)
@@ -56,13 +48,9 @@ class TeacherClassroomController extends Controller
             'email' => 'required|email|exists:users,email',
         ]);
 
-        $result = $this->teacherService->addStudentByEmail($classroom, $validated['email']);
+        $student = $this->teacherService->addStudentByEmail($classroom, $validated['email']);
 
-        if (!$result['success']) {
-            return back()->withErrors(['email' => $result['error']]);
-        }
-
-        return back()->with('success', $result['message']);
+        return back()->with('success', "{$student->firstname} {$student->lastname} added to {$classroom->name}!");
     }
 
     public function removeStudent(Classroom $classroom, User $user)

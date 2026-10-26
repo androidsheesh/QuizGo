@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\Role;
 use App\Services\AuthService;
 use Illuminate\Http\Request;
 
@@ -27,7 +28,7 @@ class TeacherSigninController extends Controller
             'password' => $request->boolean('confirm_other_device') ? 'nullable' : 'required',
         ]);
 
-        $redirectUrl = $this->authService->attemptLogin($credentials, $request, ['teacher', 'admin']);
+        $redirectUrl = $this->authService->attemptLogin($credentials, $request, [Role::Teacher, Role::Admin]);
 
         if ($redirectUrl === 'confirm-other-device') {
             return back()

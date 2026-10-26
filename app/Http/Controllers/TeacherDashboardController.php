@@ -6,7 +6,7 @@ use App\Services\TeacherDashboardService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
-class TeacherdashboardController extends Controller
+class TeacherDashboardController extends Controller
 {
     protected $dashboardService;
 

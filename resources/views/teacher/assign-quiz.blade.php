@@ -29,7 +29,7 @@
                     </div>
                 @endif
 
-                @if(session('waiting_for_quiz'))
+                @if(session('quiz_generation_id'))
                     <div id="quiz-processing-notification"
                         class="mb-8 p-6 bg-violet-50 border-2 border-dashed border-violet-200 rounded-[2rem] flex items-center justify-between animate-pulse">
                         <div class="flex items-center gap-4">
@@ -51,16 +51,22 @@
 
                     <script>
                         document.addEventListener('DOMContentLoaded', function() {
-                            const checkUrl = @json(route('teacher.api.check-new-quiz', ['oldId' => (int) session('waiting_for_quiz')]));
+                            const checkUrl = @json(route('generations.status', session('quiz_generation_id')));
+                            const banner = document.getElementById('quiz-processing-notification');
 
                             const checkInterval = setInterval(() => {
-                                fetch(checkUrl)
+                                fetch(checkUrl, { headers: { 'Accept': 'application/json' } })
                                     .then(response => response.json())
                                     .then(data => {
-                                        if (data.is_ready) {
+                                        if (data.status === 'completed') {
                                             clearInterval(checkInterval);
-                                            document.querySelector('#quiz-processing-notification h3').innerText = "Redirecting...";
-                                            window.location.href = `/teacher/quizzes/${data.quiz_id}`;
+                                            banner.querySelector('h3').innerText = "Redirecting...";
+                                            window.location.href = data.result_url;
+                                        } else if (data.status === 'failed') {
+                                            clearInterval(checkInterval);
+                                            banner.classList.remove('animate-pulse');
+                                            banner.querySelector('h3').innerText = "Quiz generation failed";
+                                            banner.querySelector('p').innerText = data.error?.message ?? 'Please try again.';
                                         }
                                     })
                                     .catch(error => console.error('Error checking quiz status:', error));

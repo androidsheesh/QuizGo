@@ -1,27 +1,22 @@
 <?php
 namespace App\Http\Controllers;
 
-use App\Services\DeckService;
+use App\Models\Generation;
 use App\Services\FlashcardGenerationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class HomeController extends Controller
 {
-    protected $deckService;
-    protected $generationService;
-
-    public function __construct(DeckService $deckService, FlashcardGenerationService $generationService)
+    public function __construct(private FlashcardGenerationService $generationService)
     {
-        $this->deckService = $deckService;
-        $this->generationService = $generationService;
     }
 
     public function show()
     {
         $user = Auth::user();
 
-        $decks = $user ? $this->deckService->getLatestDecksForUser($user) : collect();
+        $decks = $user->decks()->withCount('flashcards')->latest()->take(2)->get();
 
         return view('home', compact('user', 'decks'));
     }
@@ -61,7 +56,7 @@ class HomeController extends Controller
     public function generateFromText(Request $request)
     {
         $request->validate([
-            'text' => 'required|string|min:20',
+            'text' => 'required|string|min:20|max:50000',
             'count' => 'nullable|integer|min:1|max:20',
         ]);
 
@@ -82,7 +77,7 @@ class HomeController extends Controller
         $response = redirect()->route('mydecks')->with('flashcard_generation_id', $generation->uuid);
 
         // If the generation didn't fail during dispatch, add the success message
-        if ($generation->status !== \App\Models\FlashcardGeneration::STATUS_FAILED) {
+        if ($generation->status !== Generation::STATUS_FAILED) {
             $response->with('success', $successMessage);
         }
 
