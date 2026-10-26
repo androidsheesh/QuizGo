@@ -41,9 +41,21 @@ class StudentQuizController extends Controller
 
         $assignment->load(['quiz.questions']);
 
+        // 3. Only a student who already started may continue a closed or past-due quiz
+        $hasStarted = $student->quizAttempts()->where('quiz_assignment_id', $assignment->id)->exists();
+
+        if (! $hasStarted && ! $this->quizService->canStart($assignment)) {
+            return redirect()->route('student.classroom.show', $assignment->classroom_id)
+                ->with('error', 'This quiz is closed.');
+        }
+
+        $attempt = $this->quizService->startAttempt($assignment, $student);
+
         return view('student.quiz-take', [
-            'assignment' => $assignment,
-            'quiz'       => $assignment->quiz,
+            'assignment'       => $assignment,
+            'quiz'             => $assignment->quiz,
+            'remainingSeconds' => $this->quizService->remainingSeconds($attempt, $assignment),
+            'elapsedSeconds'   => (int) $attempt->started_at->diffInSeconds(now()),
         ]);
     }
 
@@ -66,16 +78,32 @@ class StudentQuizController extends Controller
                 ->with('error', 'Quiz already submitted.');
         }
 
-        // 3. Hand off the data to the Service to grade and save
+        $validated = $request->validate([
+            'answers'    => 'nullable|array',
+            'answers.*'  => 'nullable|string|max:1000',
+            'violations' => 'nullable|integer|min:0',
+        ]);
+
+        // 3. Hand off the data to the Service to grade and save. Time taken is measured
+        //    on the server from when the quiz was opened, never taken from the form.
         $attempt = $this->quizService->gradeAndSubmitQuiz(
             $assignment,
             $student,
-            $request->input('answers', []),
-            $request->input('time_taken', 0),
-            (int) $request->input('violations', 0)
+            $validated['answers'] ?? [],
+            (int) ($validated['violations'] ?? 0)
         );
 
+        if (! $attempt) {
+            return redirect()->route('student.classroom.show', $assignment->classroom_id)
+                ->with('error', 'This quiz has already been submitted or was never started.');
+        }
+
         // 4. Return the HTTP Redirect
+        if ($this->quizService->wasSubmittedLate($attempt, $assignment)) {
+            return redirect()->route('student.quiz.results', $attempt)
+                ->with('error', 'Your quiz was submitted after the deadline, so your answers were not counted.');
+        }
+
         return redirect()->route('student.quiz.results', $attempt)
             ->with('success', 'Quiz submitted successfully!');
     }
@@ -87,6 +115,7 @@ class StudentQuizController extends Controller
     {
         // 1. HTTP Security: Ensure the student owns this attempt
         abort_unless($attempt->student_id === Auth::id(), 403);
+        abort_unless($attempt->isCompleted(), 404);
 
         $attempt->load([
             'quizAssignment.quiz',

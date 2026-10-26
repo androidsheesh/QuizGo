@@ -8,6 +8,7 @@ use App\Models\Deck;
 use App\Models\Flashcard;
 use App\Models\FlashcardGeneration;
 use App\Services\GeminiServices;
+use App\Services\UploadStorage;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -15,9 +16,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
-use RuntimeException;
 use Throwable;
 
 class ProcessPdfFlashcards implements ShouldQueue
@@ -44,18 +43,16 @@ class ProcessPdfFlashcards implements ShouldQueue
         $this->generationId = $generationId;
     }
 
-    public function handle(GeminiServices $gemini)
+    public function handle(GeminiServices $gemini, UploadStorage $uploads)
     {
         try {
-            if (!File::exists($this->filePath)) {
-                throw new RuntimeException("Uploaded PDF file was not found.");
-            }
+            // $filePath is relative to the uploads disk
+            $flashcards = $uploads->withLocalPath($this->filePath, function (string $localPath) use ($gemini) {
+                $cacheKey = 'pdf_flashcards_'.md5_file($localPath)."_{$this->count}";
 
-            $fileHash = md5_file($this->filePath);
-            $cacheKey = "pdf_flashcards_{$fileHash}_{$this->count}";
-
-            $flashcards = Cache::remember($cacheKey, 86400, function () use ($gemini) {
-                return $gemini->generateFlashcardsFromPdf($this->filePath, $this->count);
+                return Cache::remember($cacheKey, 86400, function () use ($gemini, $localPath) {
+                    return $gemini->generateFlashcardsFromPdf($localPath, $this->count);
+                });
             });
 
             if (empty($flashcards) || !is_array($flashcards)) {
@@ -83,10 +80,6 @@ class ProcessPdfFlashcards implements ShouldQueue
             $this->broadcastGenerationFinished();
             Cache::forget("user_{$this->userId}_latest_decks");
 
-            if (File::exists($this->filePath)) {
-                File::delete($this->filePath);
-            }
-
         } catch (Throwable $e) {
             $this->generation()?->markFailed($e, 'AI_GENERATION_FAILED');
             Log::error('PDF Processing Failed', [
@@ -95,6 +88,9 @@ class ProcessPdfFlashcards implements ShouldQueue
                 'error' => $e->getMessage(),
             ]);
             throw $e;
+        } finally {
+            // Delete on failure too, otherwise failed uploads stay on disk forever
+            $uploads->delete($this->filePath);
         }
     }
 

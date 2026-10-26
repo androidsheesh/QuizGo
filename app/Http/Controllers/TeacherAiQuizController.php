@@ -4,9 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Jobs\ProcessAiQuiz;
 use App\Models\Quiz;
+use App\Services\UploadStorage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class TeacherAiQuizController extends Controller
@@ -124,9 +124,6 @@ class TeacherAiQuizController extends Controller
 
     private function storeUploadedAiFile($file): string
     {
-        $fileName = time() . '_' . str_replace(' ', '_', $file->getClientOriginalName());
-        $path = $file->storeAs('ai_quiz_uploads', $fileName, 'local');
-
-        return Storage::disk('local')->path($path);
+        return app(UploadStorage::class)->store($file, 'ai_quiz_uploads');
     }
 }

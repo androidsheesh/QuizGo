@@ -200,7 +200,7 @@
          MAIN QUIZ CONTENT (hidden until gate is passed)
     ══════════════════════════════════════════════════════════ --}}
     <div id="quizWrapper" class="min-h-screen bg-[#F9FAFB] flex flex-col quiz-content" style="display:none !important"
-         x-data="quizTimer({{ $quiz->time_limit ? $quiz->time_limit * 60 : 0 }})">
+         x-data="quizTimer({{ $remainingSeconds ?? 'null' }}, {{ $elapsedSeconds }})">
 
         {{-- Quiz Header --}}
         <header class="bg-white border-b border-gray-200 sticky top-0 z-40 shadow-sm">
@@ -263,7 +263,6 @@
 
                 <form id="quizForm" method="POST" action="{{ route('student.quiz.submit', $assignment) }}">
                     @csrf
-                    <input type="hidden" name="time_taken"  x-model="timeTaken">
                     <input type="hidden" name="violations"  id="violationsInput" value="0">
 
                     <div class="space-y-6 sm:space-y-8">
@@ -494,16 +493,20 @@
     }
 
     // ─── Alpine.js quiz timer ─────────────────────────────────────────────────
-    function quizTimer(limitSeconds) {
+    // remainingSeconds and elapsedSeconds come from the server's start time, so reloading
+    // the page doesn't reset the clock. remainingSeconds is null when there's no time limit.
+    function quizTimer(remainingSeconds, elapsedSeconds) {
         return {
-            timeLimit: limitSeconds,
-            timeLeft:  limitSeconds,
-            timeTaken: 0,
+            timeLimit: remainingSeconds !== null,
+            timeLeft:  remainingSeconds ?? 0,
+            timeTaken: elapsedSeconds,
             timer:     null,
             init() {
                 setInterval(() => { this.timeTaken++; }, 1000);
 
-                if (this.timeLimit > 0) {
+                if (this.timeLimit && this.timeLeft <= 0) {
+                    document.getElementById('quizForm').submit();
+                } else if (this.timeLimit) {
                     this.timer = setInterval(() => {
                         this.timeLeft--;
                         if (this.timeLeft <= 0) {
@@ -514,7 +517,7 @@
                 }
             },
             get formattedTime() {
-                const val = this.timeLimit > 0 ? this.timeLeft : this.timeTaken;
+                const val = this.timeLimit ? this.timeLeft : this.timeTaken;
                 const m = Math.floor(val / 60);
                 const s = val % 60;
                 return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;

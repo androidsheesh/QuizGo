@@ -15,6 +15,12 @@
                     Back to Assignments
                 </a>
 
+                @if(session('error'))
+                    <div class="bg-red-50 border border-red-200 text-red-700 px-6 py-3 rounded-2xl mb-6 font-medium text-sm">
+                        ⚠️ {{ session('error') }}
+                    </div>
+                @endif
+
                 {{-- Header --}}
                 <div class="bg-white rounded-[2rem] border border-gray-100 p-8 shadow-sm mb-10">
                     <div class="flex justify-between items-start">

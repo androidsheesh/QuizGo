@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Attributes\Scope;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -52,6 +54,21 @@ class QuizAttempt extends Model
     public function answers(): HasMany
     {
         return $this->hasMany(QuizAttemptAnswer::class);
+    }
+
+    /**
+     * Attempts that have been submitted. An attempt row is created when the quiz is opened,
+     * so in-progress attempts must be left out of results and rankings.
+     */
+    #[Scope]
+    protected function completed(Builder $query): void
+    {
+        $query->whereNotNull('completed_at');
+    }
+
+    public function isCompleted(): bool
+    {
+        return $this->completed_at !== null;
     }
 
     /**

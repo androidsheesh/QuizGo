@@ -4,8 +4,8 @@ use App\Http\Controllers\DeckController;
 use App\Http\Controllers\FlashcardGenerationStatusController;
 use App\Http\Controllers\FlashcardController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\MyProfileController;
-use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SigninController;
 use App\Http\Controllers\SignupController;
 use App\Http\Controllers\StudentClassroomController;
@@ -38,10 +38,12 @@ Route::get('/signup', [SignupController::class, 'create']);
 Route::post('/signup', [SignupController::class, 'store'])->middleware('throttle:3,1');
 
 Route::get('/signin', [SigninController::class, 'create'])->name('signin');
-Route::post('/signin', [SigninController::class, 'store']);
+Route::post('/signin', [SigninController::class, 'store'])->middleware('throttle:login');
 
 Route::get('/teacher/signin', [TeacherSigninController::class, 'create'])->name('teacher.signin');
-Route::post('/teacher/signin', [TeacherSigninController::class, 'store'])->name('teacher.signin.store');
+Route::post('/teacher/signin', [TeacherSigninController::class, 'store'])->middleware('throttle:login')->name('teacher.signin.store');
+
+Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->middleware('auth')->name('logout');
 
 // ─── Student Routes ───
 Route::middleware(['auth', 'prevent-back', 'session.token'])->group(function () {
@@ -157,7 +159,5 @@ Route::middleware(['auth:web,teacher', 'teacher', 'prevent-back', 'session.token
             'is_ready' => (bool) $newQuiz,
             'quiz_id'  => $newQuiz?->id,
         ]);
-    });
+    })->whereNumber('oldId')->name('api.check-new-quiz');
 });
-
-require __DIR__.'/auth.php';

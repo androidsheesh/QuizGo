@@ -7,11 +7,14 @@ use App\Jobs\ProcessTopicFlashcards;
 use App\Jobs\ProcessTextFlashcards;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
 use Throwable;
 
 class FlashcardGenerationService
 {
+    public function __construct(private UploadStorage $uploads)
+    {
+    }
+
     public function generateFromTopic(int $userId, string $topic, int $count): FlashcardGeneration
     {
         $generation = FlashcardGeneration::create([
@@ -39,12 +42,9 @@ class FlashcardGenerationService
 
         try {
             $originalTitle = $file->getClientOriginalName();
-            $fileName = time() . '_' . str_replace(' ', '_', $originalTitle);
+            $path = $this->uploads->store($file, 'pdf_uploads');
 
-            $path = $file->storeAs('pdf_uploads', $fileName, 'local');
-            $fullPath = Storage::disk('local')->path($path);
-
-            ProcessPdfFlashcards::dispatch($userId, $fullPath, $count, $originalTitle, $generation->id);
+            ProcessPdfFlashcards::dispatch($userId, $path, $count, $originalTitle, $generation->id);
         } catch (Throwable $e) {
             $this->handleFailure($generation, $userId, $e, 'PDF Generation Dispatch Failed');
         }

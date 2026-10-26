@@ -13,6 +13,13 @@ use Throwable;
 
 class GeminiServices
 {
+    private const MAX_SOURCE_TEXT_LENGTH = 8000;
+
+    private const MAX_PDF_PAGES = 20;
+
+    // Below this, the text layer is missing or junk (e.g. a scanned PDF) and OCR is needed
+    private const MIN_PDF_TEXT_LENGTH = 200;
+
     private string $model;
 
     public function __construct()
@@ -92,10 +99,34 @@ class GeminiServices
 
     private function trimSourceText(string $text): string
     {
-        return substr(trim($text), 0, 8000);
+        return substr(trim($text), 0, self::MAX_SOURCE_TEXT_LENGTH);
     }
 
     private function extractPdfText(string $pdfPath): string
+    {
+        // Most PDFs already carry a text layer; reading it takes milliseconds, while OCR takes seconds per page
+        $text = $this->extractPdfTextLayer($pdfPath);
+
+        if (strlen($text) >= self::MIN_PDF_TEXT_LENGTH) {
+            return $text;
+        }
+
+        return $this->extractPdfTextWithOcr($pdfPath);
+    }
+
+    private function extractPdfTextLayer(string $pdfPath): string
+    {
+        $cmd = sprintf(
+            'pdftotext -l %d -layout %s - 2>&1',
+            self::MAX_PDF_PAGES,
+            escapeshellarg($pdfPath)
+        );
+        exec($cmd, $output, $returnCode);
+
+        return $returnCode === 0 ? trim(implode("\n", $output)) : '';
+    }
+
+    private function extractPdfTextWithOcr(string $pdfPath): string
     {
         // Create a temporary directory for the rasterized page images
         $tmpDir = sys_get_temp_dir().'/quizgo_ocr_'.uniqid();
@@ -107,7 +138,8 @@ class GeminiServices
             // Convert every PDF page to PNG images using pdftoppm (from poppler-utils)
             $prefix = $tmpDir.'/page';
             $cmd = sprintf(
-                'pdftoppm -png -r 200 %s %s 2>&1',
+                'pdftoppm -png -r 200 -f 1 -l %d %s %s 2>&1',
+                self::MAX_PDF_PAGES,
                 escapeshellarg($pdfPath),
                 escapeshellarg($prefix)
             );
@@ -136,6 +168,11 @@ class GeminiServices
                     ->lang('eng')
                     ->run();
                 $fullText .= "\n".$pageText;
+
+                // Only the first MAX_SOURCE_TEXT_LENGTH characters are sent to Gemini, so stop once we have them
+                if (strlen($fullText) >= self::MAX_SOURCE_TEXT_LENGTH) {
+                    break;
+                }
             }
 
             $fullText = trim($fullText);
@@ -183,15 +220,57 @@ Text:
         return $this->generateFlashcardsFromText($this->extractPdfText($pdfPath), $count);
     }
 
+    /**
+     * Keep only questions a student can actually answer correctly: a non-empty question,
+     * at least two choices, and a correct_answer that is one of the choices.
+     */
+    public function normalizeQuizQuestions(array $questions): array
+    {
+        $valid = [];
+
+        foreach ($questions as $question) {
+            if (! is_array($question)) {
+                continue;
+            }
+
+            $text = trim((string) ($question['question'] ?? ''));
+            $choices = array_values(array_filter(
+                array_map(fn ($choice) => is_scalar($choice) ? trim((string) $choice) : '', (array) ($question['choices'] ?? [])),
+                fn ($choice) => $choice !== '' && strlen($choice) <= 255
+            ));
+            $correctAnswer = trim((string) ($question['correct_answer'] ?? ''));
+
+            // Match case-insensitively, then store the choice's exact text so grading compares like with like
+            $matchedChoice = collect($choices)->first(fn ($choice) => strcasecmp($choice, $correctAnswer) === 0);
+
+            if ($text === '' || count($choices) < 2 || $matchedChoice === null) {
+                continue;
+            }
+
+            $valid[] = [
+                'question'       => $text,
+                'type'           => 'multiple_choice',
+                'choices'        => $choices,
+                'correct_answer' => $matchedChoice,
+            ];
+        }
+
+        if (empty($valid)) {
+            throw new RuntimeException('Gemini did not return any usable quiz questions. Please try again.');
+        }
+
+        return $valid;
+    }
+
     public function generateQuizFromTopic(string $topic, int $count = 10): array
     {
         $count = $this->normalizeCount($count);
 
-        return $this->generateContent(
+        return $this->normalizeQuizQuestions($this->generateContent(
             "Generate exactly {$count} multiple-choice quiz questions about this topic: {$topic}.
 Return only a JSON array. Each item must have exactly these keys:
 question as a string, type as the string multiple_choice, choices as an array of exactly 4 strings, correct_answer as one exact value from choices."
-        );
+        ));
     }
 
     public function generateQuizFromText(string $text, int $count = 10): array
@@ -199,13 +278,13 @@ question as a string, type as the string multiple_choice, choices as an array of
         $count = $this->normalizeCount($count);
         $text = $this->trimSourceText($text);
 
-        return $this->generateContent(
+        return $this->normalizeQuizQuestions($this->generateContent(
             "Based on the following text, generate exactly {$count} multiple-choice quiz questions.
 Return only a JSON array. Each item must have exactly these keys:
 question as a string, type as the string multiple_choice, choices as an array of exactly 4 strings, correct_answer as one exact value from choices.
 Text:
 {$text}"
-        );
+        ));
     }
 
     public function generateQuizFromPdf(string $pdfPath, int $count = 10): array
