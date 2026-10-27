@@ -2,6 +2,27 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+    /* Long unbroken strings (emails, URLs, pasted text) wrap instead of widening their container */
+    body {
+        overflow-wrap: anywhere;
+    }
+
+    /* …but table cells keep whole words; wide tables scroll inside their own wrapper */
+    table {
+        overflow-wrap: normal;
+    }
+}
+
+/* iOS Safari zooms the page when a focused field's text is under 16px */
+@media (max-width: 639px) {
+    input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+    select,
+    textarea {
+        font-size: 1rem !important;
+    }
+}
+
 /* Custom Sidebar Scrollbar */
 .custom-sidebar-scroll {
     scrollbar-width: thin;

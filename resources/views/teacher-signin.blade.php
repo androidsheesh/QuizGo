@@ -1,13 +1,13 @@
 <x-signup title="QuizGo | Teacher Sign In">
-    <div class="h-screen bg-slate-50 flex items-center justify-center p-6">
+    <div class="min-h-dvh bg-slate-50 flex items-center justify-center px-4 py-10 sm:p-6">
 
-        <div class="w-full max-w-3xl min-h-[800px] bg-white border border-gray-200 rounded-2xl shadow-lg p-14 relative overflow-hidden">
+        <div class="w-full max-w-lg bg-white border border-gray-200 rounded-2xl shadow-lg p-6 sm:p-10 relative overflow-hidden">
             
             {{-- Decorative Accent --}}
             <div class="absolute top-0 left-0 w-full h-2 bg-emerald-500"></div>
 
             <div class="text-center mb-10">
-                <h1 class="text-5xl font-extrabold text-slate-800 tracking-tight mb-2">QuizGo</h1>
+                <h1 class="text-4xl sm:text-5xl font-extrabold text-slate-800 tracking-tight mb-2">QuizGo</h1>
                 <p class="text-xl text-emerald-600 font-bold">Educator Portal</p>
                 <p class="text-sm text-slate-400 mt-2">Sign in to manage your classrooms and quizzes.</p>
             </div>

@@ -53,7 +53,7 @@
                     @csrf
                     @method('PUT')
                     <div>
-                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Question</label>
+                        <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1">Question</label>
                         <textarea
                             name="question"
                             rows="3"
@@ -61,7 +61,7 @@
                         >{{ $card->question }}</textarea>
                     </div>
                     <div>
-                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Answer</label>
+                        <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1">Answer</label>
                         <textarea
                             name="answer"
                             rows="3"
@@ -88,13 +88,13 @@
 
             {{-- Question — takes remaining space, clamps at 4 lines --}}
             <div class="flex-1 overflow-hidden pr-6 mb-3">
-                <p class="text-[10px] font-bold {{ $accent['label'] }} uppercase tracking-widest mb-2">Question</p>
+                <p class="text-[11px] font-bold {{ $accent['label'] }} uppercase tracking-widest mb-2">Question</p>
                 <p class="text-slate-800 font-bold leading-relaxed line-clamp-4">{{ $card->question }}</p>
             </div>
 
             {{-- Answer — fixed height zone, always the same size --}}
             <div class="shrink-0 pt-4 border-t border-slate-100" style="height: 96px; overflow: hidden;">
-                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Answer</p>
+                <p class="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1">Answer</p>
                 <p class="text-slate-600 text-sm leading-relaxed line-clamp-3">{{ $card->answer }}</p>
             </div>
 

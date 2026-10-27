@@ -7,7 +7,7 @@
             <div class="max-w-3xl mx-auto relative flex items-center justify-center min-h-[44px]">
 
                 <!-- Absolute left positioning for Back button -->
-                <a href="{{ route('decks.show', $deck) }}" class="absolute left-0 flex items-center gap-2 text-slate-400 hover:text-slate-700 transition-colors">
+                <a href="{{ route('decks.show', $deck) }}" class="absolute left-0 flex items-center gap-2 p-2 -m-2 text-slate-400 hover:text-slate-700 transition-colors">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
                     <span class="font-semibold text-sm hidden md:inline">Back to Deck</span>
                 </a>
@@ -51,7 +51,7 @@
 
                 {{-- Question Card --}}
                 <div class="bg-white rounded-[2rem] shadow-lg shadow-slate-200/50 border border-gray-100 p-6 md:p-8 mb-5">
-                    <p class="text-[10px] font-bold text-amber-400 uppercase tracking-widest mb-3">Question <span x-text="current + 1"></span></p>
+                    <p class="text-[11px] font-bold text-amber-400 uppercase tracking-widest mb-3">Question <span x-text="current + 1"></span></p>
                     <p class="text-lg md:text-xl font-bold text-slate-800 leading-relaxed" x-text="cards[current]?.question"></p>
                 </div>
 
@@ -65,7 +65,7 @@
                             @keydown.enter="if(!answered) checkAnswer()"
                             :disabled="answered"
                             :class="answered ? 'bg-slate-50 cursor-not-allowed' : 'bg-slate-50 focus:bg-white focus:border-amber-400'"
-                            class="flex-1 p-3.5 border border-transparent rounded-2xl text-slate-700 font-medium focus:outline-none transition-all placeholder:text-slate-300"
+                            class="flex-1 min-w-0 w-full p-3.5 border border-transparent rounded-2xl text-slate-700 font-medium focus:outline-none transition-all placeholder:text-slate-300"
                             placeholder="Type your answer here...">
                         <button @click="checkAnswer()"
                             x-show="!answered"
@@ -116,7 +116,7 @@
 
             {{-- Results Screen --}}
             <div class="w-full max-w-lg" x-show="finished" style="display: none;">
-                <div class="bg-white rounded-[2rem] shadow-lg shadow-slate-200/50 border border-gray-100 p-10 text-center">
+                <div class="bg-white rounded-[2rem] shadow-lg shadow-slate-200/50 border border-gray-100 p-6 sm:p-10 text-center">
                     <div class="w-20 h-20 rounded-full mx-auto mb-6 flex items-center justify-center text-4xl"
                         :class="percentage >= 70 ? 'bg-emerald-100' : percentage >= 40 ? 'bg-amber-100' : 'bg-red-100'">
                         <span x-text="percentage >= 70 ? '🎉' : percentage >= 40 ? '💪' : '📚'"></span>

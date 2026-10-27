@@ -44,7 +44,7 @@
             <div class="max-w-3xl mx-auto relative flex items-center justify-center min-h-[44px]">
 
                 <!-- Absolute left positioning for Back button -->
-                <a href="{{ route('decks.show', $deck) }}" class="absolute left-0 flex items-center gap-2 text-slate-400 hover:text-slate-700 transition-colors">
+                <a href="{{ route('decks.show', $deck) }}" class="absolute left-0 flex items-center gap-2 p-2 -m-2 text-slate-400 hover:text-slate-700 transition-colors">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
                     <span class="font-semibold text-sm hidden md:inline">Back to Deck</span>
                 </a>
@@ -85,7 +85,7 @@
 
                         {{-- Front (Question) --}}
                         <div class="study-flip-front bg-white rounded-[2.5rem] border border-gray-100 flex flex-col items-center p-8 md:p-12">
-                            <span class="text-[10px] font-bold text-emerald-500 uppercase tracking-widest shrink-0">Question</span>
+                            <span class="text-[11px] font-bold text-emerald-500 uppercase tracking-widest shrink-0">Question</span>
 
                             {{-- Inner wrapper for long text scrolling --}}
                             <div class="flex-1 w-full flex items-center justify-center overflow-y-auto my-4">
@@ -97,7 +97,7 @@
 
                         {{-- Back (Answer) --}}
                         <div class="study-flip-back bg-gradient-to-br from-emerald-500 to-teal-600 rounded-[2.5rem] flex flex-col items-center p-8 md:p-12 shadow-xl shadow-emerald-200/50">
-                            <span class="text-[10px] font-bold text-emerald-100 uppercase tracking-widest shrink-0">Answer</span>
+                            <span class="text-[11px] font-bold text-emerald-100 uppercase tracking-widest shrink-0">Answer</span>
 
                             {{-- Inner wrapper for long text scrolling --}}
                             <div class="flex-1 w-full flex items-center justify-center overflow-y-auto my-4">
