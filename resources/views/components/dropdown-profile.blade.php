@@ -1,22 +1,27 @@
 {{-- Profile Dropdown + Logout Confirmation Modal --}}
-<div class="fixed top-6 right-6 md:right-12 z-50"
-     x-data="{ open: false, showLogout: false }">
+<div class="relative"
+     x-data="{ open: false, showLogout: false }"
+     @keydown.escape.window="open = false">
 
     {{-- ── Avatar / trigger pill ── --}}
-    <div @click="open = !open"
-         class="flex items-center space-x-2 cursor-pointer group bg-white/80 backdrop-blur-md p-1.5 pr-3 rounded-full shadow-sm border border-gray-100 hover:shadow-md transition-all">
-        <div class="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center border border-emerald-200 group-hover:border-emerald-400 transition-colors overflow-hidden">
+    <button type="button"
+            @click="open = !open"
+            :aria-expanded="open.toString()"
+            aria-haspopup="menu"
+            aria-label="Account menu"
+            class="flex items-center gap-2 group bg-white p-1 sm:p-1.5 sm:pr-3 rounded-full shadow-sm border border-gray-100 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-500 transition-all">
+        <span class="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-emerald-100 flex items-center justify-center border border-emerald-200 group-hover:border-emerald-400 transition-colors overflow-hidden shrink-0">
             @if(Auth::check() && Auth::user()->profile_picture)
-                <img src="{{ asset('storage/' . Auth::user()->profile_picture) }}" alt="Avatar" class="w-full h-full object-cover">
+                <img src="{{ asset('storage/' . Auth::user()->profile_picture) }}" alt="" class="w-full h-full object-cover">
             @else
-                <span class="text-xs">👤</span>
+                <span class="text-sm" aria-hidden="true">👤</span>
             @endif
-        </div>
+        </span>
         @if(Auth::check())
-            <span class="hidden md:block text-sm font-semibold text-slate-700">{{ Auth::user()->firstname }}</span>
+            <span class="hidden sm:block max-w-[10rem] truncate text-sm font-semibold text-slate-700">{{ Auth::user()->firstname }}</span>
         @endif
-        <span class="text-gray-400 text-xs transition-transform duration-200" :class="open ? 'rotate-180' : ''">⌄</span>
-    </div>
+        <span class="hidden sm:block text-gray-400 text-xs transition-transform duration-200" :class="open ? 'rotate-180' : ''" aria-hidden="true">⌄</span>
+    </button>
 
     {{-- ── Dropdown panel ── --}}
     <div x-show="open"
@@ -27,23 +32,29 @@
          x-transition:leave="transition ease-in duration-75"
          x-transition:leave-start="transform opacity-100 scale-100"
          x-transition:leave-end="transform opacity-0 scale-95"
-         class="absolute right-0 mt-3 w-52 bg-white rounded-2xl shadow-xl py-2 border border-gray-100"
+         class="absolute right-0 z-50 mt-3 w-56 bg-white rounded-2xl shadow-xl p-1 border border-gray-100"
+         role="menu"
          style="display: none;">
 
-        <div class="px-4 py-2 border-b border-gray-50 mb-1">
-            <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Account</p>
+        <div class="px-3 py-2 border-b border-gray-50 mb-1">
+            <p class="text-[11px] text-gray-400 font-bold uppercase tracking-widest">Account</p>
+            @if(Auth::check())
+                <p class="text-sm font-semibold text-slate-700 truncate">{{ Auth::user()->firstname }} {{ Auth::user()->lastname }}</p>
+            @endif
         </div>
 
-        <a href="{{ Auth::check() && Auth::user()->isTeacher() ? route('teacher.profile') : '/myprofile' }}"
-           class="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 transition-colors rounded-xl mx-1">
-            <span class="text-base">👤</span> Your Profile
+        <a href="{{ Auth::check() && Auth::user()->isTeacher() ? route('teacher.profile') : route('myprofile') }}"
+           role="menuitem"
+           class="flex items-center gap-2.5 px-3 py-3 text-sm text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 transition-colors rounded-xl">
+            <span class="text-base" aria-hidden="true">👤</span> Your Profile
         </a>
 
         {{-- Logout trigger — opens the modal, does NOT submit yet --}}
         <button type="button"
+                role="menuitem"
                 @click="open = false; showLogout = true"
-                class="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 hover:text-red-600 transition-colors rounded-xl mx-1">
-            <span class="text-base">🚪</span> Logout
+                class="w-full flex items-center gap-2.5 px-3 py-3 text-sm text-red-500 hover:bg-red-50 hover:text-red-600 transition-colors rounded-xl">
+            <span class="text-base" aria-hidden="true">🚪</span> Logout
         </button>
     </div>
 

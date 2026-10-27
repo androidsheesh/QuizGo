@@ -146,7 +146,7 @@
                 </span>
             </button>
 
-            <p class="text-center text-slate-600 text-[10px] md:text-xs mt-4">
+            <p class="text-center text-slate-600 text-[11px] md:text-xs mt-4">
                 Your teacher will be notified of any suspicious activity.
             </p>
         </div>

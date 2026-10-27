@@ -6,7 +6,7 @@
             <div class="max-w-3xl mx-auto flex items-center justify-between relative">
 
                 {{-- Left: Back Link --}}
-                <a href="{{ route('decks.show', $deck) }}" class="relative z-10 flex items-center gap-1 md:gap-2 text-slate-400 hover:text-slate-700 transition-colors">
+                <a href="{{ route('decks.show', $deck) }}" class="relative z-10 flex items-center gap-1 md:gap-2 p-2 -m-2 text-slate-400 hover:text-slate-700 transition-colors">
                     <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
                     <span class="font-semibold text-sm hidden sm:inline">Back</span>
                 </a>
@@ -14,14 +14,14 @@
                 {{-- Center: Title & Subtitle (Locked to perfect center) --}}
                 <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-center w-[50%] sm:w-[60%] z-0">
                     <h2 class="text-base md:text-lg font-bold text-slate-800 truncate" title="{{ $deck->title }}">{{ $deck->title }}</h2>
-                    <p class="text-[10px] md:text-xs text-slate-400 font-medium">Multiple Choice</p>
+                    <p class="text-[11px] md:text-xs text-slate-400 font-medium">Multiple Choice</p>
                 </div>
 
                 {{-- Right: Score --}}
                 <div class="relative z-10 flex items-center gap-2 shrink-0">
                     <div class="px-2 md:px-3 py-1.5 bg-emerald-50 border border-emerald-100 rounded-xl flex items-center gap-1">
                         <span class="text-sm font-bold text-emerald-600" x-text="score"></span>
-                        <span class="text-[10px] md:text-xs text-emerald-400 uppercase md:normal-case">correct</span>
+                        <span class="text-[11px] md:text-xs text-emerald-400 uppercase md:normal-case">correct</span>
                     </div>
                 </div>
             </div>
@@ -49,7 +49,7 @@
 
                 {{-- Question Card --}}
                 <div class="bg-white rounded-3xl md:rounded-[2rem] shadow-lg shadow-slate-200/50 border border-gray-100 p-5 md:p-8 mb-5">
-                    <p class="text-[10px] font-bold text-violet-400 uppercase tracking-widest mb-3">Question <span x-text="current + 1"></span></p>
+                    <p class="text-[11px] font-bold text-violet-400 uppercase tracking-widest mb-3">Question <span x-text="current + 1"></span></p>
                     <p class="text-base sm:text-lg md:text-xl font-bold text-slate-800 leading-relaxed" x-text="cards[current]?.question"></p>
                 </div>
 
@@ -119,15 +119,15 @@
                     <div class="flex justify-center gap-6 md:gap-8 mb-8">
                         <div class="text-center">
                             <p class="text-2xl md:text-3xl font-black" :class="percentage >= 70 ? 'text-emerald-500' : percentage >= 40 ? 'text-amber-500' : 'text-red-500'" x-text="percentage + '%'"></p>
-                            <p class="text-[10px] md:text-xs text-slate-400 font-medium mt-1">Score</p>
+                            <p class="text-[11px] md:text-xs text-slate-400 font-medium mt-1">Score</p>
                         </div>
                         <div class="text-center">
                             <p class="text-2xl md:text-3xl font-black text-emerald-500" x-text="score"></p>
-                            <p class="text-[10px] md:text-xs text-slate-400 font-medium mt-1">Correct</p>
+                            <p class="text-[11px] md:text-xs text-slate-400 font-medium mt-1">Correct</p>
                         </div>
                         <div class="text-center">
                             <p class="text-2xl md:text-3xl font-black text-red-400" x-text="cards.length - score"></p>
-                            <p class="text-[10px] md:text-xs text-slate-400 font-medium mt-1">Wrong</p>
+                            <p class="text-[11px] md:text-xs text-slate-400 font-medium mt-1">Wrong</p>
                         </div>
                     </div>
 

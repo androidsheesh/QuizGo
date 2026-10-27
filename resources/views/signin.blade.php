@@ -1,15 +1,15 @@
 <x-signup title="QuizGo | Sign In">
-    <div class="min-h-screen bg-[#f8f8f8] flex items-center justify-center p-6">
+    <div class="min-h-dvh bg-[#f8f8f8] flex items-center justify-center px-4 py-10 sm:p-6">
 
-        <div class="w-full max-w-3xl min-h-[800px] bg-white border border-gray-200 rounded-2xl shadow-md p-14">
+        <div class="w-full max-w-lg bg-white border border-gray-200 rounded-2xl shadow-md p-6 sm:p-10">
 
             <div class="text-center mb-6">
-                <h1 class="text-5xl font-extrabold text-black tracking-tight mb-1">QuizGo</h1>
+                <h1 class="text-4xl sm:text-5xl font-extrabold text-black tracking-tight mb-1">QuizGo</h1>
                 <p class="text-xl text-gray-800 font-light">Welcome!</p>
             </div>
 
             <div class="flex justify-center mb-8">
-                <div class="bg-[#f5f4f4] p-1 rounded-full flex w-72">
+                <div class="bg-[#f5f4f4] p-1 rounded-full flex w-full max-w-72">
                     <a href="/signup"
                         class="flex-1 py-2 text-center text-sm font-medium text-gray-500 hover:text-gray-900 transition">
                         Sign up

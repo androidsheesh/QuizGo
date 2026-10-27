@@ -2,6 +2,7 @@ import Alpine from 'alpinejs';
 
 // Must load before Alpine.start(): the quiz page's x-data calls quizTimer()
 import './quiz-take';
+import './sidebar';
 
 window.Alpine = Alpine;
 

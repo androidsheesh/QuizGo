@@ -27,8 +27,8 @@
 
     <!-- Mobile Dropdown Menu -->
     <div id="mobile-menu" class="absolute top-[calc(100%+0.5rem)] right-0 lg:right-12 w-56 bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-gray-100 flex flex-col p-5 space-y-4 opacity-0 pointer-events-none transition-all duration-300 ease-in-out lg:hidden origin-top-right transform scale-95 z-50">
-        <a href="#features" class="mobile-link text-black font-bold text-sm uppercase tracking-widest hover:text-indigo-600 transition-colors bg-transparent">About</a>
-        <a href="/signin" class="mobile-link text-black font-bold text-sm uppercase tracking-widest hover:text-indigo-600 transition-colors bg-transparent">Login</a>
+        <a href="#features" class="mobile-link inline-flex items-center min-h-[44px] px-4 text-black font-bold text-sm uppercase tracking-widest hover:text-indigo-600 transition-colors bg-transparent">About</a>
+        <a href="/signin" class="mobile-link inline-flex items-center min-h-[44px] px-4 text-black font-bold text-sm uppercase tracking-widest hover:text-indigo-600 transition-colors bg-transparent">Login</a>
         <a href="/signup" class="mobile-link flex w-full justify-center px-4 py-3 mt-2 rounded-xl bg-black text-white font-bold text-sm shadow-[3px_3px_0px_0px_rgba(200,200,200,1)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all border border-black">
             Start Learning
         </a>

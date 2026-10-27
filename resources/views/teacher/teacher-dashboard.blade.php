@@ -1,301 +1,292 @@
-<x-layout>
-    <div class="flex min-h-screen bg-[#F9FAFB]">
+<x-app-shell>
+    <div class="max-w-5xl mx-auto flex flex-col">
 
-        <x-teacher-sidebar/>
+        {{-- Header --}}
+        <div class="flex flex-col mb-10">
+            <h2 class="text-3xl md:text-4xl font-bold text-slate-800">Teacher Dashboard</h2>
+            <p class="text-slate-500 mt-2">Welcome back, {{ Auth::user()->firstname }}! Manage your quizzes and students here.</p>
+        </div>
 
-        <x-dropdown-profile/>
-        <main class="flex-1 px-6 pb-6 pt-20 md:p-12 overflow-y-auto relative">
+        {{-- Stats Cards --}}
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
 
-            <div class="max-w-5xl mx-auto flex flex-col">
-
-                {{-- Header --}}
-                <div class="flex flex-col mt-16 lg:mt-0 mb-10">
-                    <h2 class="text-3xl md:text-4xl font-bold text-slate-800">Teacher Dashboard</h2>
-                    <p class="text-slate-500 mt-2">Welcome back, {{ Auth::user()->firstname }}! Manage your quizzes and students here.</p>
+            <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100 flex items-center space-x-4 hover:shadow-md transition-shadow">
+                <div class="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center text-emerald-600 text-xl font-bold">
+                    📝
                 </div>
-
-                {{-- Stats Cards --}}
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-
-                    <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100 flex items-center space-x-4 hover:shadow-md transition-shadow">
-                        <div class="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center text-emerald-600 text-xl font-bold">
-                            📝
-                        </div>
-                        <div>
-                            <p class="text-slate-400 text-sm font-medium">Active Quizzes</p>
-                            <p class="text-2xl font-bold text-slate-800">{{ $activeQuizzes }}</p>
-                        </div>
-                    </div>
-
-                    <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100 flex items-center space-x-4 hover:shadow-md transition-shadow">
-                        <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center text-blue-600 text-xl font-bold">
-                            👨‍🎓
-                        </div>
-                        <div>
-                            <p class="text-slate-400 text-sm font-medium">Total Students</p>
-                            <p class="text-2xl font-bold text-slate-800">{{ $totalStudents }}</p>
-                        </div>
-                    </div>
-
-                    <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100 flex items-center space-x-4 hover:shadow-md transition-shadow">
-                        <div class="w-12 h-12 bg-violet-100 rounded-xl flex items-center justify-center text-violet-600 text-xl font-bold">
-                            🏫
-                        </div>
-                        <div>
-                            <p class="text-slate-400 text-sm font-medium">Total Classes</p>
-                            <p class="text-2xl font-bold text-slate-800">{{ $totalClasses }}</p>
-                        </div>
-                    </div>
-
+                <div>
+                    <p class="text-slate-400 text-sm font-medium">Active Quizzes</p>
+                    <p class="text-2xl font-bold text-slate-800">{{ $activeQuizzes }}</p>
                 </div>
-
-                {{-- My Classes Section --}}
-                <div class="mb-12" x-data="{ showCreateClass: false }">
-                    <div class="flex flex-col md:flex-row justify-between md:items-center mb-6 gap-4">
-                        <h3 class="text-xl font-bold text-slate-700">My Classes</h3>
-
-                        <div class="flex flex-col md:flex-row items-center gap-4">
-                            {{-- Search Bar --}}
-                            <form method="GET" action="{{ route('teacher.dashboard') }}" class="flex w-full md:w-auto"
-                                  x-data="{ query: '{{ request('search_class') }}', search() {
-                                      let url = new URL('{{ route('teacher.dashboard') }}');
-                                      if (this.query) { url.searchParams.set('search_class', this.query); }
-                                      fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
-                                          .then(res => res.text())
-                                          .then(html => {
-                                              let doc = new DOMParser().parseFromString(html, 'text/html');
-                                              document.getElementById('teacher-classes-container').innerHTML = doc.getElementById('teacher-classes-container').innerHTML;
-                                              window.history.pushState({}, '', url);
-                                          });
-                                  } }" @submit.prevent="search">
-                                <input type="text" name="search_class" x-model="query" @input.debounce.500ms="search" placeholder="Search classes..." class="w-full md:w-64 p-2 bg-white border border-gray-200 rounded-xl text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-400/30 focus:border-emerald-300 transition-all shadow-sm">
-                                <button type="submit" class="ml-2 px-4 py-2 bg-emerald-500 text-white font-bold rounded-xl shadow-sm hover:bg-emerald-600 transition-colors">
-                                    Search
-                                </button>
-                            </form>
-
-                            <button @click="showCreateClass = !showCreateClass" class="flex items-center space-x-2 px-5 py-2 bg-slate-900 text-white rounded-2xl shadow-lg shadow-slate-200 hover:bg-slate-800 transition-all text-sm font-semibold whitespace-nowrap">
-                                <span class="text-lg">＋</span>
-                                <span>New Class</span>
-                            </button>
-                        </div>
-                    </div>
-
-                    {{-- Create Class Form --}}
-                    <div x-show="showCreateClass" x-cloak
-                         x-transition:enter="transition ease-out duration-200"
-                         x-transition:enter-start="opacity-0 -translate-y-2"
-                         x-transition:enter-end="opacity-100 translate-y-0"
-                         class="bg-white rounded-[2rem] border border-gray-100 p-6 mb-6 shadow-sm">
-                        <form method="POST" action="{{ route('teacher.classroom.store') }}" class="flex flex-col md:flex-row gap-4 items-end">
-                            @csrf
-                            <div class="flex-1">
-                                <label class="block text-sm font-semibold text-slate-600 mb-2">Class Name</label>
-                                <input type="text" name="name" placeholder="e.g. IT9a" required
-                                       class="w-full p-3 bg-slate-50 border border-slate-100 rounded-xl text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-400/30 focus:border-emerald-300 transition-all">
-                            </div>
-                            <div class="flex-1">
-                                <label class="block text-sm font-semibold text-slate-600 mb-2">Description (optional)</label>
-                                <input type="text" name="description" placeholder="e.g. Information Technology Section A"
-                                       class="w-full p-3 bg-slate-50 border border-slate-100 rounded-xl text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-400/30 focus:border-emerald-300 transition-all">
-                            </div>
-                            <button type="submit" class="px-6 py-3 bg-emerald-500 text-white font-bold rounded-xl hover:bg-emerald-600 transition-all shadow-md whitespace-nowrap">
-                                Create Class
-                            </button>
-                        </form>
-                    </div>
-
-                    {{-- Success / Error Messages --}}
-                    @if(session('success'))
-                        <div class="bg-emerald-50 border border-emerald-200 text-emerald-700 px-6 py-3 rounded-2xl mb-6 font-medium text-sm"
-                             x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 4000)"
-                             x-transition:leave="transition ease-in duration-200"
-                             x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
-                            ✓ {{ session('success') }}
-                        </div>
-                    @endif
-
-                    @if(session('error'))
-                        <div class="bg-red-50 border border-red-200 text-red-700 px-6 py-3 rounded-2xl mb-6 font-medium text-sm">
-                            {{ session('error') }}
-                        </div>
-                    @endif
-
-                    {{-- Class Cards --}}
-                    <div id="teacher-classes-container">
-                    @if($classrooms->isEmpty())
-                        <div class="text-center py-14 bg-white rounded-3xl border border-gray-100 shadow-sm">
-                            <div class="text-4xl mb-3">🏫</div>
-                            <h4 class="text-base font-bold text-slate-700">No classes found</h4>
-                            <p class="text-slate-400 text-sm mt-1">@if(request('search_class')) Try a different search term! @else Create your first class to start managing students! @endif</p>
-                        </div>
-                    @else
-                        @php
-                            $accentColors = ['bg-emerald-400', 'bg-blue-400', 'bg-amber-400', 'bg-rose-400', 'bg-violet-400', 'bg-cyan-400'];
-                        @endphp
-                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            @foreach($classrooms as $index => $classroom)
-                                <a href="{{ route('teacher.classroom.show', $classroom) }}"
-                                   class="group relative flex flex-col bg-white border border-gray-100 rounded-[2rem] overflow-hidden shadow-sm hover:shadow-xl hover:shadow-slate-200/50 transition-all duration-300 transform hover:-translate-y-1 cursor-pointer">
-                                    <div class="h-3 {{ $accentColors[$index % count($accentColors)] }}"></div>
-                                    <div class="flex-1 p-6">
-                                        <div class="flex justify-between items-start mb-3">
-                                            <div>
-                                                <h4 class="text-lg font-bold text-slate-800 group-hover:text-emerald-600 transition-colors">{{ $classroom->name }}</h4>
-                                                <p class="text-slate-400 text-sm font-medium mt-1">Code: <span class="font-mono bg-slate-100 px-2 py-0.5 rounded-md text-slate-600">{{ $classroom->code }}</span></p>
-                                            </div>
-                                            <div class="bg-blue-50 text-blue-600 text-xs font-bold px-3 py-1 rounded-full">
-                                                {{ $classroom->students_count }} {{ Str::plural('student', $classroom->students_count) }}
-                                            </div>
-                                        </div>
-                                        @if($classroom->description)
-                                            <p class="text-gray-400 text-sm mt-2 line-clamp-2">{{ $classroom->description }}</p>
-                                        @endif
-                                        <div class="mt-4 flex items-center text-sm text-slate-400">
-                                            <span>{{ $classroom->quiz_assignments_count }} {{ Str::plural('quiz', $classroom->quiz_assignments_count) }} assigned</span>
-                                        </div>
-                                    </div>
-                                </a>
-                            @endforeach
-                        </div>
-                    @endif
-
-                    {{-- Pagination for Classrooms --}}
-                    @if ($classrooms->hasPages())
-                        <nav role="navigation" aria-label="Pagination Navigation" class="flex items-center justify-center space-x-2 mt-8">
-                            {{-- Previous Page Link --}}
-                            @if ($classrooms->onFirstPage())
-                                <span class="px-4 py-2 text-slate-300 bg-white border border-gray-100 rounded-2xl cursor-not-allowed">
-                                    ← <span class="hidden md:inline ml-1">Prev</span>
-                                </span>
-                            @else
-                                <a href="{{ $classrooms->previousPageUrl() }}" class="px-4 py-2 text-slate-600 bg-white border border-gray-100 rounded-2xl hover:bg-slate-50 hover:border-emerald-300 transition-all shadow-sm">
-                                    ← <span class="hidden md:inline ml-1">Prev</span>
-                                </a>
-                            @endif
-
-                            {{-- Pagination Elements --}}
-                            <div class="flex items-center bg-white border border-gray-100 rounded-2xl p-1 shadow-sm">
-                                @foreach ($classrooms->getUrlRange(max(1, $classrooms->currentPage() - 1), min($classrooms->lastPage(), $classrooms->currentPage() + 1)) as $page => $url)
-                                    @if ($page == $classrooms->currentPage())
-                                        <span class="w-10 h-10 flex items-center justify-center bg-emerald-500 text-white font-bold rounded-xl shadow-md shadow-emerald-200">
-                                            {{ $page }}
-                                        </span>
-                                    @else
-                                        <a href="{{ $url }}" class="w-10 h-10 flex items-center justify-center text-slate-500 font-semibold rounded-xl hover:bg-slate-50 hover:text-emerald-600 transition-all">
-                                            {{ $page }}
-                                        </a>
-                                    @endif
-                                @endforeach
-                            </div>
-
-                            {{-- Next Page Link --}}
-                            @if ($classrooms->hasMorePages())
-                                <a href="{{ $classrooms->nextPageUrl() }}" class="px-4 py-2 text-slate-600 bg-white border border-gray-100 rounded-2xl hover:bg-slate-50 hover:border-emerald-300 transition-all shadow-sm">
-                                    <span class="hidden md:inline mr-1">Next</span> →
-                                </a>
-                            @else
-                                <span class="px-4 py-2 text-slate-300 bg-white border border-gray-100 rounded-2xl cursor-not-allowed">
-                                    <span class="hidden md:inline mr-1">Next</span> →
-                                </span>
-                            @endif
-                        </nav>
-                    @endif
-                    </div>
-                </div>
-
-                {{-- Recent Quizzes Section --}}
-                <div class="mb-8">
-                    <div class="flex justify-between items-center mb-6">
-                        <h3 class="text-xl font-bold text-slate-700">Recent Quizzes</h3>
-                        <a href="{{ route('teacher.quiz.index') }}" class="text-slate-400 text-sm font-medium hover:text-slate-600 transition-colors">View all →</a>
-                    </div>
-
-                    @if($recentQuizzes->isEmpty())
-                        <div class="text-center py-14 bg-white rounded-3xl border border-gray-100 shadow-sm">
-                            <div class="text-4xl mb-3">📝</div>
-                            <h4 class="text-base font-bold text-slate-700">No quizzes yet</h4>
-                            <p class="text-slate-400 text-sm mt-1">Create your first quiz to get started!</p>
-                            <a href="{{ route('teacher.quiz.index') }}" class="inline-block mt-5 px-6 py-2 bg-emerald-500 text-white text-sm font-semibold rounded-full hover:bg-emerald-600 transition-colors shadow-lg shadow-emerald-200">
-                                Create a Quiz
-                            </a>
-                        </div>
-                    @else
-                        @php
-                            $quizColors = ['bg-emerald-400', 'bg-blue-400', 'bg-amber-400', 'bg-rose-400', 'bg-violet-400'];
-                        @endphp
-                        <div class="space-y-4">
-                            @foreach($recentQuizzes as $index => $quiz)
-                                <div class="group flex items-center bg-white border border-gray-100 rounded-3xl overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer">
-                                    <div class="flex-1 p-6 flex justify-between items-center">
-                                        <div>
-                                            <h4 class="text-lg font-bold text-slate-800">{{ $quiz->title }}</h4>
-                                            <p class="text-slate-400 text-sm mt-1">
-                                                {{ $quiz->questions_count }} {{ Str::plural('question', $quiz->questions_count) }}
-                                                @if($quiz->time_limit)
-                                                    • {{ $quiz->time_limit }} min
-                                                @endif
-                                                @if($quiz->assignments->isNotEmpty())
-                                                    • Assigned to {{ $quiz->assignments->pluck('classroom.name')->join(', ') }}
-                                                @endif
-                                            </p>
-                                        </div>
-                                        <div class="flex items-center space-x-3">
-                                            <span class="px-3 py-1 text-xs font-bold rounded-full {{ $quiz->is_active ? 'bg-emerald-50 text-emerald-600' : 'bg-gray-100 text-gray-500' }}">
-                                                {{ $quiz->is_active ? 'Active' : 'Inactive' }}
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <div class="w-2 self-stretch {{ $quizColors[$index % count($quizColors)] }}"></div>
-                                </div>
-                            @endforeach
-                        </div>
-                    @endif
-
-                    {{-- Pagination for Quizzes --}}
-                    @if ($recentQuizzes->hasPages())
-                        <nav role="navigation" aria-label="Pagination Navigation" class="flex items-center justify-center space-x-2 mt-8">
-                            {{-- Previous Page Link --}}
-                            @if ($recentQuizzes->onFirstPage())
-                                <span class="px-4 py-2 text-slate-300 bg-white border border-gray-100 rounded-2xl cursor-not-allowed">
-                                    ← <span class="hidden md:inline ml-1">Prev</span>
-                                </span>
-                            @else
-                                <a href="{{ $recentQuizzes->previousPageUrl() }}" class="px-4 py-2 text-slate-600 bg-white border border-gray-100 rounded-2xl hover:bg-slate-50 hover:border-emerald-300 transition-all shadow-sm">
-                                    ← <span class="hidden md:inline ml-1">Prev</span>
-                                </a>
-                            @endif
-
-                            {{-- Pagination Elements --}}
-                            <div class="flex items-center bg-white border border-gray-100 rounded-2xl p-1 shadow-sm">
-                                @foreach ($recentQuizzes->getUrlRange(max(1, $recentQuizzes->currentPage() - 1), min($recentQuizzes->lastPage(), $recentQuizzes->currentPage() + 1)) as $page => $url)
-                                    @if ($page == $recentQuizzes->currentPage())
-                                        <span class="w-10 h-10 flex items-center justify-center bg-emerald-500 text-white font-bold rounded-xl shadow-md shadow-emerald-200">
-                                            {{ $page }}
-                                        </span>
-                                    @else
-                                        <a href="{{ $url }}" class="w-10 h-10 flex items-center justify-center text-slate-500 font-semibold rounded-xl hover:bg-slate-50 hover:text-emerald-600 transition-all">
-                                            {{ $page }}
-                                        </a>
-                                    @endif
-                                @endforeach
-                            </div>
-
-                            {{-- Next Page Link --}}
-                            @if ($recentQuizzes->hasMorePages())
-                                <a href="{{ $recentQuizzes->nextPageUrl() }}" class="px-4 py-2 text-slate-600 bg-white border border-gray-100 rounded-2xl hover:bg-slate-50 hover:border-emerald-300 transition-all shadow-sm">
-                                    <span class="hidden md:inline mr-1">Next</span> →
-                                </a>
-                            @else
-                                <span class="px-4 py-2 text-slate-300 bg-white border border-gray-100 rounded-2xl cursor-not-allowed">
-                                    <span class="hidden md:inline mr-1">Next</span> →
-                                </span>
-                            @endif
-                        </nav>
-                    @endif
-                </div>
-
             </div>
-        </main>
+
+            <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100 flex items-center space-x-4 hover:shadow-md transition-shadow">
+                <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center text-blue-600 text-xl font-bold">
+                    👨‍🎓
+                </div>
+                <div>
+                    <p class="text-slate-400 text-sm font-medium">Total Students</p>
+                    <p class="text-2xl font-bold text-slate-800">{{ $totalStudents }}</p>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100 flex items-center space-x-4 hover:shadow-md transition-shadow">
+                <div class="w-12 h-12 bg-violet-100 rounded-xl flex items-center justify-center text-violet-600 text-xl font-bold">
+                    🏫
+                </div>
+                <div>
+                    <p class="text-slate-400 text-sm font-medium">Total Classes</p>
+                    <p class="text-2xl font-bold text-slate-800">{{ $totalClasses }}</p>
+                </div>
+            </div>
+
+        </div>
+
+        {{-- My Classes Section --}}
+        <div class="mb-12" x-data="{ showCreateClass: false }">
+            <div class="flex flex-col md:flex-row justify-between md:items-center mb-6 gap-4">
+                <h3 class="text-xl font-bold text-slate-700">My Classes</h3>
+
+                <div class="flex flex-col md:flex-row items-center gap-4">
+                    {{-- Search Bar --}}
+                    <form method="GET" action="{{ route('teacher.dashboard') }}" class="flex w-full md:w-auto"
+                          x-data="{ query: '{{ request('search_class') }}', search() {
+                              let url = new URL('{{ route('teacher.dashboard') }}');
+                              if (this.query) { url.searchParams.set('search_class', this.query); }
+                              fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                                  .then(res => res.text())
+                                  .then(html => {
+                                      let doc = new DOMParser().parseFromString(html, 'text/html');
+                                      document.getElementById('teacher-classes-container').innerHTML = doc.getElementById('teacher-classes-container').innerHTML;
+                                      window.history.pushState({}, '', url);
+                                  });
+                          } }" @submit.prevent="search">
+                        <input type="text" name="search_class" x-model="query" @input.debounce.500ms="search" placeholder="Search classes..." aria-label="Search classes" class="min-w-0 flex-1 md:flex-none w-full md:w-64 p-2 bg-white border border-gray-200 rounded-xl text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-400/30 focus:border-emerald-300 transition-all shadow-sm">
+                        <button type="submit" class="ml-2 shrink-0 whitespace-nowrap px-4 py-2 bg-emerald-500 text-white font-bold rounded-xl shadow-sm hover:bg-emerald-600 transition-colors">
+                            Search
+                        </button>
+                    </form>
+
+                    <button @click="showCreateClass = !showCreateClass" class="flex items-center space-x-2 px-5 py-2 bg-slate-900 text-white rounded-2xl shadow-lg shadow-slate-200 hover:bg-slate-800 transition-all text-sm font-semibold whitespace-nowrap">
+                        <span class="text-lg">＋</span>
+                        <span>New Class</span>
+                    </button>
+                </div>
+            </div>
+
+            {{-- Create Class Form --}}
+            <div x-show="showCreateClass" x-cloak
+                 x-transition:enter="transition ease-out duration-200"
+                 x-transition:enter-start="opacity-0 -translate-y-2"
+                 x-transition:enter-end="opacity-100 translate-y-0"
+                 class="bg-white rounded-[2rem] border border-gray-100 p-6 mb-6 shadow-sm">
+                <form method="POST" action="{{ route('teacher.classroom.store') }}" class="flex flex-col md:flex-row gap-4 items-end">
+                    @csrf
+                    <div class="flex-1">
+                        <label class="block text-sm font-semibold text-slate-600 mb-2">Class Name</label>
+                        <input type="text" name="name" placeholder="e.g. IT9a" required
+                               class="w-full p-3 bg-slate-50 border border-slate-100 rounded-xl text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-400/30 focus:border-emerald-300 transition-all">
+                    </div>
+                    <div class="flex-1">
+                        <label class="block text-sm font-semibold text-slate-600 mb-2">Description (optional)</label>
+                        <input type="text" name="description" placeholder="e.g. Information Technology Section A"
+                               class="w-full p-3 bg-slate-50 border border-slate-100 rounded-xl text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-400/30 focus:border-emerald-300 transition-all">
+                    </div>
+                    <button type="submit" class="px-6 py-3 bg-emerald-500 text-white font-bold rounded-xl hover:bg-emerald-600 transition-all shadow-md whitespace-nowrap">
+                        Create Class
+                    </button>
+                </form>
+            </div>
+
+            {{-- Success / Error Messages --}}
+            @if(session('success'))
+                <div class="bg-emerald-50 border border-emerald-200 text-emerald-700 px-6 py-3 rounded-2xl mb-6 font-medium text-sm"
+                     x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 4000)"
+                     x-transition:leave="transition ease-in duration-200"
+                     x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
+                    ✓ {{ session('success') }}
+                </div>
+            @endif
+
+            @if(session('error'))
+                <div class="bg-red-50 border border-red-200 text-red-700 px-6 py-3 rounded-2xl mb-6 font-medium text-sm">
+                    {{ session('error') }}
+                </div>
+            @endif
+
+            {{-- Class Cards --}}
+            <div id="teacher-classes-container">
+            @if($classrooms->isEmpty())
+                <div class="text-center py-14 bg-white rounded-3xl border border-gray-100 shadow-sm">
+                    <div class="text-4xl mb-3">🏫</div>
+                    <h4 class="text-base font-bold text-slate-700">No classes found</h4>
+                    <p class="text-slate-400 text-sm mt-1">@if(request('search_class')) Try a different search term! @else Create your first class to start managing students! @endif</p>
+                </div>
+            @else
+                @php
+                    $accentColors = ['bg-emerald-400', 'bg-blue-400', 'bg-amber-400', 'bg-rose-400', 'bg-violet-400', 'bg-cyan-400'];
+                @endphp
+                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                    @foreach($classrooms as $index => $classroom)
+                        <a href="{{ route('teacher.classroom.show', $classroom) }}"
+                           class="group relative flex flex-col bg-white border border-gray-100 rounded-[2rem] overflow-hidden shadow-sm hover:shadow-xl hover:shadow-slate-200/50 transition-all duration-300 transform hover:-translate-y-1 cursor-pointer">
+                            <div class="h-3 {{ $accentColors[$index % count($accentColors)] }}"></div>
+                            <div class="flex-1 p-6">
+                                <div class="flex justify-between items-start mb-3">
+                                    <div class="min-w-0">
+                                        <h4 class="text-lg font-bold text-slate-800 group-hover:text-emerald-600 transition-colors line-clamp-3 break-words">{{ $classroom->name }}</h4>
+                                        <p class="text-slate-400 text-sm font-medium mt-1">Code: <span class="font-mono bg-slate-100 px-2 py-0.5 rounded-md text-slate-600">{{ $classroom->code }}</span></p>
+                                    </div>
+                                    <div class="shrink-0 whitespace-nowrap bg-blue-50 text-blue-600 text-xs font-bold px-3 py-1 rounded-full">
+                                        {{ $classroom->students_count }} {{ Str::plural('student', $classroom->students_count) }}
+                                    </div>
+                                </div>
+                                @if($classroom->description)
+                                    <p class="text-gray-400 text-sm mt-2 line-clamp-2">{{ $classroom->description }}</p>
+                                @endif
+                                <div class="mt-4 flex items-center text-sm text-slate-400">
+                                    <span>{{ $classroom->quiz_assignments_count }} {{ Str::plural('quiz', $classroom->quiz_assignments_count) }} assigned</span>
+                                </div>
+                            </div>
+                        </a>
+                    @endforeach
+                </div>
+            @endif
+
+            {{-- Pagination for Classrooms --}}
+            @if ($classrooms->hasPages())
+                <nav role="navigation" aria-label="Pagination Navigation" class="flex items-center justify-center space-x-2 mt-8">
+                    {{-- Previous Page Link --}}
+                    @if ($classrooms->onFirstPage())
+                        <span class="px-4 py-2 text-slate-300 bg-white border border-gray-100 rounded-2xl cursor-not-allowed">
+                            ← <span class="hidden md:inline ml-1">Prev</span>
+                        </span>
+                    @else
+                        <a href="{{ $classrooms->previousPageUrl() }}" class="px-4 py-2 text-slate-600 bg-white border border-gray-100 rounded-2xl hover:bg-slate-50 hover:border-emerald-300 transition-all shadow-sm">
+                            ← <span class="hidden md:inline ml-1">Prev</span>
+                        </a>
+                    @endif
+
+                    {{-- Pagination Elements --}}
+                    <div class="flex items-center bg-white border border-gray-100 rounded-2xl p-1 shadow-sm">
+                        @foreach ($classrooms->getUrlRange(max(1, $classrooms->currentPage() - 1), min($classrooms->lastPage(), $classrooms->currentPage() + 1)) as $page => $url)
+                            @if ($page == $classrooms->currentPage())
+                                <span class="w-10 h-10 flex items-center justify-center bg-emerald-500 text-white font-bold rounded-xl shadow-md shadow-emerald-200">
+                                    {{ $page }}
+                                </span>
+                            @else
+                                <a href="{{ $url }}" class="w-10 h-10 flex items-center justify-center text-slate-500 font-semibold rounded-xl hover:bg-slate-50 hover:text-emerald-600 transition-all">
+                                    {{ $page }}
+                                </a>
+                            @endif
+                        @endforeach
+                    </div>
+
+                    {{-- Next Page Link --}}
+                    @if ($classrooms->hasMorePages())
+                        <a href="{{ $classrooms->nextPageUrl() }}" class="px-4 py-2 text-slate-600 bg-white border border-gray-100 rounded-2xl hover:bg-slate-50 hover:border-emerald-300 transition-all shadow-sm">
+                            <span class="hidden md:inline mr-1">Next</span> →
+                        </a>
+                    @else
+                        <span class="px-4 py-2 text-slate-300 bg-white border border-gray-100 rounded-2xl cursor-not-allowed">
+                            <span class="hidden md:inline mr-1">Next</span> →
+                        </span>
+                    @endif
+                </nav>
+            @endif
+            </div>
+        </div>
+
+        {{-- Recent Quizzes Section --}}
+        <div class="mb-8">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-bold text-slate-700">Recent Quizzes</h3>
+                <a href="{{ route('teacher.quiz.index') }}" class="py-2 -my-2 text-slate-400 text-sm font-medium hover:text-slate-600 transition-colors">View all →</a>
+            </div>
+
+            @if($recentQuizzes->isEmpty())
+                <div class="text-center py-14 bg-white rounded-3xl border border-gray-100 shadow-sm">
+                    <div class="text-4xl mb-3">📝</div>
+                    <h4 class="text-base font-bold text-slate-700">No quizzes yet</h4>
+                    <p class="text-slate-400 text-sm mt-1">Create your first quiz to get started!</p>
+                    <a href="{{ route('teacher.quiz.index') }}" class="inline-block mt-5 px-6 py-2 bg-emerald-500 text-white text-sm font-semibold rounded-full hover:bg-emerald-600 transition-colors shadow-lg shadow-emerald-200">
+                        Create a Quiz
+                    </a>
+                </div>
+            @else
+                @php
+                    $quizColors = ['bg-emerald-400', 'bg-blue-400', 'bg-amber-400', 'bg-rose-400', 'bg-violet-400'];
+                @endphp
+                <div class="space-y-4">
+                    @foreach($recentQuizzes as $index => $quiz)
+                        <div class="group flex items-center bg-white border border-gray-100 rounded-3xl overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer">
+                            <div class="flex-1 p-6 flex justify-between items-center">
+                                <div>
+                                    <h4 class="text-lg font-bold text-slate-800">{{ $quiz->title }}</h4>
+                                    <p class="text-slate-400 text-sm mt-1">
+                                        {{ $quiz->questions_count }} {{ Str::plural('question', $quiz->questions_count) }}
+                                        @if($quiz->time_limit)
+                                            • {{ $quiz->time_limit }} min
+                                        @endif
+                                        @if($quiz->assignments->isNotEmpty())
+                                            • Assigned to {{ $quiz->assignments->pluck('classroom.name')->join(', ') }}
+                                        @endif
+                                    </p>
+                                </div>
+                                <div class="flex items-center space-x-3">
+                                    <span class="px-3 py-1 text-xs font-bold rounded-full {{ $quiz->is_active ? 'bg-emerald-50 text-emerald-600' : 'bg-gray-100 text-gray-500' }}">
+                                        {{ $quiz->is_active ? 'Active' : 'Inactive' }}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="w-2 self-stretch {{ $quizColors[$index % count($quizColors)] }}"></div>
+                        </div>
+                    @endforeach
+                </div>
+            @endif
+
+            {{-- Pagination for Quizzes --}}
+            @if ($recentQuizzes->hasPages())
+                <nav role="navigation" aria-label="Pagination Navigation" class="flex items-center justify-center space-x-2 mt-8">
+                    {{-- Previous Page Link --}}
+                    @if ($recentQuizzes->onFirstPage())
+                        <span class="px-4 py-2 text-slate-300 bg-white border border-gray-100 rounded-2xl cursor-not-allowed">
+                            ← <span class="hidden md:inline ml-1">Prev</span>
+                        </span>
+                    @else
+                        <a href="{{ $recentQuizzes->previousPageUrl() }}" class="px-4 py-2 text-slate-600 bg-white border border-gray-100 rounded-2xl hover:bg-slate-50 hover:border-emerald-300 transition-all shadow-sm">
+                            ← <span class="hidden md:inline ml-1">Prev</span>
+                        </a>
+                    @endif
+
+                    {{-- Pagination Elements --}}
+                    <div class="flex items-center bg-white border border-gray-100 rounded-2xl p-1 shadow-sm">
+                        @foreach ($recentQuizzes->getUrlRange(max(1, $recentQuizzes->currentPage() - 1), min($recentQuizzes->lastPage(), $recentQuizzes->currentPage() + 1)) as $page => $url)
+                            @if ($page == $recentQuizzes->currentPage())
+                                <span class="w-10 h-10 flex items-center justify-center bg-emerald-500 text-white font-bold rounded-xl shadow-md shadow-emerald-200">
+                                    {{ $page }}
+                                </span>
+                            @else
+                                <a href="{{ $url }}" class="w-10 h-10 flex items-center justify-center text-slate-500 font-semibold rounded-xl hover:bg-slate-50 hover:text-emerald-600 transition-all">
+                                    {{ $page }}
+                                </a>
+                            @endif
+                        @endforeach
+                    </div>
+
+                    {{-- Next Page Link --}}
+                    @if ($recentQuizzes->hasMorePages())
+                        <a href="{{ $recentQuizzes->nextPageUrl() }}" class="px-4 py-2 text-slate-600 bg-white border border-gray-100 rounded-2xl hover:bg-slate-50 hover:border-emerald-300 transition-all shadow-sm">
+                            <span class="hidden md:inline mr-1">Next</span> →
+                        </a>
+                    @else
+                        <span class="px-4 py-2 text-slate-300 bg-white border border-gray-100 rounded-2xl cursor-not-allowed">
+                            <span class="hidden md:inline mr-1">Next</span> →
+                        </span>
+                    @endif
+                </nav>
+            @endif
+        </div>
+
     </div>
-</x-layout>
+</x-app-shell>

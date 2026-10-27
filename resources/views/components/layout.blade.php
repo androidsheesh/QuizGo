@@ -2,7 +2,8 @@
 <html lang="en" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#F9FAFB">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ $title ?? 'QuizGo' }}</title>
 
@@ -32,7 +33,7 @@
     @endif
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="bg-white text-gray-900 font-['Outfit'] antialiased selection:bg-blue-500 selection:text-white">
+<body class="bg-[#F9FAFB] text-gray-900 font-sans antialiased selection:bg-blue-500 selection:text-white">
     @if($broadcastUser)
         <div
             id="global-toast-container"
@@ -52,14 +53,5 @@
         };
     </script>
 
-    {{-- Realtime logout --}}
-    @if($broadcastUser)
-        <script>
-            window.Echo.private(`user.{{ $broadcastUser->id }}`)
-                .listen('.session.hijacked', () => {
-                    window.location.href = '/signin?kicked=1';
-                });
-        </script>
-    @endif
 </body>
 </html>

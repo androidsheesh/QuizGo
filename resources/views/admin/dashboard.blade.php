@@ -38,7 +38,7 @@
 
             {{-- Left Column: Create Teacher Form --}}
             <div class="lg:col-span-1 space-y-6">
-                <div class="bg-white border border-gray-200 rounded-[2rem] p-8 shadow-sm">
+                <div class="bg-white border border-gray-200 rounded-[2rem] p-5 sm:p-8 shadow-sm">
                     <div class="flex items-center gap-3 mb-6">
                         <div class="w-10 h-10 rounded-xl bg-violet-100 flex items-center justify-center text-violet-500 text-xl">👨‍🏫</div>
                         <h2 class="text-xl font-bold text-slate-800">Create Teacher</h2>
@@ -76,7 +76,7 @@
 
             {{-- Right Column: Teacher List --}}
             <div class="lg:col-span-2 space-y-6">
-                <div class="bg-white border border-gray-200 rounded-[2rem] p-8 shadow-sm min-h-[600px]">
+                <div class="bg-white border border-gray-200 rounded-[2rem] p-5 sm:p-8 shadow-sm min-h-[600px]">
                     <h2 class="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
                         Registered Teachers 
                         <span class="px-2 py-0.5 bg-slate-100 text-slate-500 text-xs rounded-full">{{ $teachers->count() }}</span>
@@ -98,7 +98,7 @@
                                         avatar: '{{ $teacher->profile_picture ? asset('storage/' . $teacher->profile_picture) : '' }}',
                                         created: '{{ $teacher->created_at->format('M d, Y') }}'
                                      }">
-                                    <div class="flex items-center gap-4">
+                                    <div class="flex items-center gap-4 min-w-0">
                                         <div class="w-12 h-12 bg-white border border-gray-200 rounded-full flex items-center justify-center text-lg shadow-sm overflow-hidden shrink-0">
                                             @if($teacher->profile_picture)
                                                 <img src="{{ asset('storage/' . $teacher->profile_picture) }}" class="w-full h-full object-cover">
@@ -106,14 +106,14 @@
                                                 👨‍🏫
                                             @endif
                                         </div>
-                                        <div>
-                                            <h3 class="font-bold text-slate-800">{{ $teacher->firstname }} {{ $teacher->lastname }}</h3>
-                                            <p class="text-xs text-slate-500">{{ $teacher->email }} &bull; Added {{ $teacher->created_at->format('M d, Y') }}</p>
+                                        <div class="min-w-0">
+                                            <h3 class="font-bold text-slate-800 truncate">{{ $teacher->firstname }} {{ $teacher->lastname }}</h3>
+                                            <p class="text-xs text-slate-500 truncate">{{ $teacher->email }} &bull; Added {{ $teacher->created_at->format('M d, Y') }}</p>
                                         </div>
                                     </div>
                                     <form action="{{ route('admin.teachers.destroy', $teacher) }}" method="POST" onsubmit="return confirm('Delete this teacher account permanently?');" class="shrink-0 ml-4">
                                         @csrf @method('DELETE')
-                                        <button type="submit" @click.stop class="w-10 h-10 rounded-full flex items-center justify-center text-red-300 hover:bg-red-50 hover:text-red-500 transition opacity-0 group-hover:opacity-100" title="Delete Teacher">
+                                        <button type="submit" @click.stop class="w-10 h-10 rounded-full flex items-center justify-center text-red-300 hover:bg-red-50 hover:text-red-500 transition [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 focus-visible:opacity-100" title="Delete Teacher">
                                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                                         </button>
                                     </form>
@@ -127,7 +127,7 @@
             {{-- Teacher Details Modal --}}
             <div x-show="selectedTeacher" x-cloak class="fixed inset-0 z-50 flex items-center justify-center" x-transition>
                 <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" @click="selectedTeacher = null"></div>
-                <div class="relative bg-white rounded-[2rem] shadow-2xl w-full max-w-lg mx-4 p-8 overflow-hidden" x-transition x-show="selectedTeacher">
+                <div class="relative bg-white rounded-[2rem] shadow-2xl w-full max-w-lg mx-4 p-6 sm:p-8 overflow-hidden" x-transition x-show="selectedTeacher">
                     <button @click="selectedTeacher = null" class="absolute top-6 right-6 w-8 h-8 flex items-center justify-center bg-slate-100 text-slate-500 rounded-full hover:bg-slate-200 transition">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                     </button>
@@ -149,13 +149,13 @@
 
                     <div class="space-y-5">
                         <div class="bg-slate-50 rounded-2xl p-4 border border-slate-100">
-                            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Email Address</label>
+                            <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1">Email Address</label>
                             <div class="flex items-center justify-between">
                                 <p class="text-slate-700 font-mono font-bold text-lg" x-text="selectedTeacher?.email"></p>
                             </div>
                         </div>
                         <div class="bg-slate-50 rounded-2xl p-4 border border-slate-100">
-                            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Date Joined</label>
+                            <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1">Date Joined</label>
                             <p class="text-slate-700 font-medium" x-text="selectedTeacher?.created"></p>
                         </div>
                     </div>
